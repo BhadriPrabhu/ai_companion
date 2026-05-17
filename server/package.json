@@ -15,6 +15,7 @@
     "child_process": "^1.0.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "edge-tts-universal": "^1.4.0",
     "express": "^5.2.1",
     "fs": "^0.0.1-security",
     "google-tts-api": "^2.0.2",

@@ -27,6 +27,18 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
   const [facialExpression, setFacialExpression] = useState('default');
   const [lipsync, setLipsync] = useState(null);
 
+  // 🚨 THE FIX: Create Refs so the 3D loop can see the live updates
+  const blinkRef = useRef(false);
+  const facialExpressionRef = useRef('default');
+  const lipsyncRef = useRef(null);
+  const isFocusModeRef = useRef(isFocusMode);
+
+  // 🚨 THE FIX: Sync React state to the Refs automatically
+  useEffect(() => { blinkRef.current = blink; }, [blink]);
+  useEffect(() => { facialExpressionRef.current = facialExpression; }, [facialExpression]);
+  useEffect(() => { lipsyncRef.current = lipsync; }, [lipsync]);
+  useEffect(() => { isFocusModeRef.current = isFocusMode; }, [isFocusMode]);
+
   const facialExpressions = {
     default: {},
     smile: {
@@ -35,13 +47,16 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     },
     happy: {
       browInnerUp: 0.17, eyeSquintLeft: 0.4, eyeSquintRight: 0.44,
-      mouthSmileLeft: 1, mouthSmileRight: 1,
+      mouthSmileLeft: 0.5, mouthSmileRight: 0.5,
     },
   };
 
   const visemeMapping = {
-    A: "viseme_PP", B: "viseme_kk", C: "viseme_I", D: "viseme_AA",
-    E: "viseme_O", F: "viseme_U", G: "viseme_FF", H: "viseme_TH", X: "viseme_PP",
+    A: ["viseme_PP"], B: ["viseme_kk"], C: ["viseme_I"],
+    D: ["viseme_AA", "viseme_aa"],
+    E: ["viseme_O", "viseme_o"],
+    F: ["viseme_U", "viseme_u"],
+    G: ["viseme_FF"], H: ["viseme_TH"], X: ["viseme_PP", "viseme_sil"],
   };
 
   const avatarStateConfig = {
@@ -313,64 +328,80 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
         if (cameraRef.current) {
           const state = currentAvatarStateRef.current;
-          let targetZ = 4.0; // Default Idle distance
-          let targetY = 1.4; // Default Height
+          let targetZ = 4.0;
+          let targetY = 1.4;
 
-          if (isFocusMode) {
-            targetZ = 1.4; // Deep close-up zoom
-            targetY = 1.63; // Centered closely on face
+          // 🚨 Read Focus Mode from the Ref!
+          if (isFocusModeRef.current) {
+            targetZ = 1.4;
+            targetY = 1.63;
           } else if (state.includes('talking')) {
-            targetZ = 1.8; // Zoom in close for talking
-            targetY = 1.6; // Move up to face level
+            targetZ = 1.8;
+            targetY = 1.6;
           } else if (state.includes('dancing') || state.includes('chicken') || state.includes('bow') || state.includes('salute') || state.includes('shaking') || state.includes('clapping') || state.includes('disappointed')) {
-            targetZ = 5.5; // Zoom way out for full body
-            targetY = 1.0; // Move down to capture feet
+            targetZ = 5.5;
+            targetY = 1.0;
           }
 
-          // Smoothly glide the camera to the target position
           cameraRef.current.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.05);
-          cameraRef.current.lookAt(0, 1.2, 0); // Keep looking at the chest/neck area
+          cameraRef.current.lookAt(0, 1.2, 0);
         }
 
         if (avatarRef.current) {
-          const expression = facialExpressions[facialExpression] || {};
+          // 🚨 Read Expression from the Ref!
+          const expression = facialExpressions[facialExpressionRef.current] || {};
+
+          // 1. FACIAL EXPRESSIONS
           avatarRef.current.traverse((child) => {
             if (child.isSkinnedMesh && child.morphTargetDictionary) {
               Object.keys(child.morphTargetDictionary).forEach((key) => {
-                if (key === "eyeBlinkLeft" || key === "eyeBlinkRight") return;
+                if (key.includes("eyeBlink") || key.startsWith("viseme_") || key === "jawOpen" || key === "mouthOpen") return;
+
                 const targetValue = expression[key] || 0;
                 lerpMorphTarget(key, targetValue, 0.1);
               });
             }
           });
 
-          lerpMorphTarget("eyeBlinkLeft", blink ? 1 : 0, 0.5);
-          lerpMorphTarget("eyeBlinkRight", blink ? 1 : 0, 0.5);
+          // 2. BLINKS (Read from the Ref!)
+          lerpMorphTarget("eyeBlinkLeft", blinkRef.current ? 1 : 0, 0.5);
+          lerpMorphTarget("eyeBlinkRight", blinkRef.current ? 1 : 0, 0.5);
 
-          if (lipsync && audioRef.current) {
+          // 3. PERFECT LIP SYNC (Read from the Ref!)
+          const activeLipsync = lipsyncRef.current;
+
+          if (activeLipsync && audioRef.current) {
             const currentAudioTime = audioRef.current.currentTime;
             const appliedMorphTargets = [];
 
-            for (let i = 0; i < lipsync.mouthCues.length; i++) {
-              const mouthCue = lipsync.mouthCues[i];
+            for (let i = 0; i < activeLipsync.mouthCues.length; i++) {
+              const mouthCue = activeLipsync.mouthCues[i];
               if (currentAudioTime >= mouthCue.start && currentAudioTime <= mouthCue.end) {
-                const viseme = visemeMapping[mouthCue.value];
-                if (viseme) {
-                  appliedMorphTargets.push(viseme);
-                  lerpMorphTarget(viseme, 1, 0.95);
+
+                const visemes = visemeMapping[mouthCue.value];
+                if (visemes) {
+                  visemes.forEach(viseme => {
+                    appliedMorphTargets.push(viseme);
+                    lerpMorphTarget(viseme, 1, 0.2);
+                  });
+                }
+
+                // Force jaw drop on loud vowels
+                if (['D', 'E', 'F'].includes(mouthCue.value)) {
+                  appliedMorphTargets.push("jawOpen");
+                  lerpMorphTarget("jawOpen", 0.6, 0.2);
                 }
                 break;
               }
             }
 
-            Object.values(visemeMapping).forEach((viseme) => {
+            Object.values(visemeMapping).flat().concat(["jawOpen"]).forEach((viseme) => {
               if (!appliedMorphTargets.includes(viseme)) {
-                lerpMorphTarget(viseme, 0, 0.95);
+                lerpMorphTarget(viseme, 0, 0.1);
               }
             });
           }
         }
-
         if (rendererRef.current && sceneRef.current && cameraRef.current) {
           rendererRef.current.render(sceneRef.current, cameraRef.current);
         }
@@ -391,7 +422,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
       if (rendererRef.current) rendererRef.current.dispose();
       window.removeEventListener('resize', handleResize);
     };
-  }, [onLoad, isFocusMode]);
+  }, [onLoad]);
 
   return (
     <div className={`fixed top-0 left-0 w-screen h-screen -z-10 ${className}`}>
@@ -515,8 +546,8 @@ const AvatarDemo = () => {
                 <button
                   onClick={() => setIsFocusMode(!isFocusMode)}
                   className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode
-                      ? 'border-purple-500'
-                      : 'border-gray-300'
+                    ? 'border-purple-500'
+                    : 'border-gray-300'
                     }`}
                   aria-label="Toggle focus mode"
                   title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
@@ -540,8 +571,8 @@ const AvatarDemo = () => {
                   {/* Sliding solid block slider */}
                   <div
                     className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode
-                        ? 'translate-x-7 bg-purple-600'
-                        : 'translate-x-0 bg-gray-400'
+                      ? 'translate-x-7 bg-purple-600'
+                      : 'translate-x-0 bg-gray-400'
                       }`}
                   />
                 </button>

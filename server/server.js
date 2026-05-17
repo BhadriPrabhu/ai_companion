@@ -13,6 +13,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Add this near the top of server.js
+let EdgeTTS;
+(async () => {
+    const module = await import('edge-tts-universal');
+    EdgeTTS = module.EdgeTTS;
+})();
+
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const systemInstruction = `
@@ -68,14 +75,19 @@ app.post('/api/chat', async (req, res) => {
         const aiData = JSON.parse(aiResponse.text);
         console.log("Gemini decided:", aiData);
 
-        // 2. Get the Voice (Google TTS)
-        console.log("Generating audio...");
-        const audioBase64 = await googleTTS.getAudioBase64(aiData.replyText, {
-            lang: 'en',
-            slow: true,
-            host: 'https://translate.google.com',
-        });
+        // 2. Get the Voice (Microsoft Edge Neural TTS - 100% FREE)
+        console.log("Generating audio with Edge Neural TTS...");
+        
+        // 'en-US-AriaNeural' is a fantastic, highly realistic female voice.
+        // Other options: 'en-US-GuyNeural' (Male), 'en-US-JennyNeural' (Female)
+        const tts = new EdgeTTS(aiData.replyText, 'en-US-AriaNeural');
+        const result = await tts.synthesize();
+        
+        // The package returns an ArrayBuffer. We convert it to Base64 for React.
+        const audioBuffer = Buffer.from(await result.audio.arrayBuffer());
+        const audioBase64 = audioBuffer.toString('base64');
         aiData.audio = audioBase64;
+        
 
         // 3. Generate Lip Sync (Rhubarb)
         console.log("Generating lip sync data...");
