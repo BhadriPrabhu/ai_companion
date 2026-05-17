@@ -331,6 +331,9 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
           let targetZ = 4.0;
           let targetY = 1.4;
           let targetX = 0.1;
+          let targetLookAtX = 0;
+          let targetLookAtY = 1.2;
+          let targetLookAtZ = 0;
 
           // 🚨 Read Focus Mode from the Ref!
           if (isFocusModeRef.current) {
@@ -341,6 +344,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
             targetX = 0.1;
             targetZ = 5.5;
             targetY = 1.0;
+            targetLookAtY = 1;
           } else if (state.includes('talking1')){
             targetX = 0.8;
             targetZ = 1.8;
@@ -353,10 +357,14 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
             targetX = 0.1;
             targetZ = 1.8;
             targetY = 1.6;
+          } else {
+            targetX = 0.1;
+            targetZ = 4.5;
+            targetY = 1.4;
           }
 
           cameraRef.current.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.05);
-          cameraRef.current.lookAt(0, 1.2, 0);
+          cameraRef.current.lookAt(new THREE.Vector3(targetLookAtX, targetLookAtY, targetLookAtZ));
         }
 
         if (avatarRef.current) {
