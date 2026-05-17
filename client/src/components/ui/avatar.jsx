@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import axios from 'axios';
-import { Eye, Mic, Target } from 'lucide-react';
+import { ChevronDown, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
   const mountRef = useRef(null);
@@ -330,20 +330,32 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
           const state = currentAvatarStateRef.current;
           let targetZ = 4.0;
           let targetY = 1.4;
+          let targetX = 0.1;
 
           // 🚨 Read Focus Mode from the Ref!
           if (isFocusModeRef.current) {
-            targetZ = 1.4;
-            targetY = 1.63;
-          } else if (state.includes('talking')) {
-            targetZ = 1.8;
-            targetY = 1.6;
+            targetX = 0;
+            targetZ = 1.5;
+            targetY = 1.43;
           } else if (state.includes('dancing') || state.includes('chicken') || state.includes('bow') || state.includes('salute') || state.includes('shaking') || state.includes('clapping') || state.includes('disappointed')) {
+            targetX = 0.1;
             targetZ = 5.5;
             targetY = 1.0;
+          } else if (state.includes('talking1')){
+            targetX = 0.8;
+            targetZ = 1.8;
+            targetY = 1.6;
+          } else if (state.includes('talking2')){
+            targetX = 0.7;
+            targetZ = 1.8;
+            targetY = 1.6;
+          } else if (state.includes('talking')) {
+            targetX = 0.1;
+            targetZ = 1.8;
+            targetY = 1.6;
           }
 
-          cameraRef.current.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.05);
+          cameraRef.current.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.05);
           cameraRef.current.lookAt(0, 1.2, 0);
         }
 
@@ -438,6 +450,7 @@ const AvatarDemo = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const states = [
     'idle', 'sad_idle', 'talking', 'talking1', 'talking2',
@@ -527,113 +540,157 @@ const AvatarDemo = () => {
         isFocusMode={isFocusMode}
       />
 
-      <div className="max-w-3xl mx-auto w-full mb-4">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white drop-shadow-md">
-          Meet Zara AI
-        </h1>
+<div className={`w-full mb-4 transition-all duration-300 ${
+  isMinimized 
+    ? 'fixed bottom-4 right-4 max-w-xs z-50' // Floats elegantly to the bottom right when minimized
+    : 'max-w-3xl mx-auto'
+}`}>
 
-        {/* ✅ Made the UI box transparent (glassmorphism) and restored pointer events */}
-        <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50">
+  {/* Hidden title when minimized to clear up vertical space */}
+  {!isMinimized && (
+    <h1 className={`${isFocusMode ? 'text-3xl' : 'text-xl'} font-bold text-center mb-2 text-white drop-shadow-md`}>
+      Meet Zara AI
+    </h1>
+  )}
 
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">Chat with Zara</h3>
+  {/* Glassmorphic Container */}
+  <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300">
+    
+    {/* Layout shifts to a compact row when minimized */}
+    <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-3' : 'flex-col'}`}>
+      
+      {/* Header section (Title & Toggles) */}
+      {!isMinimized && (
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Chat with Zara</h3>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Focus Mode
-                </span>
-                <button
-                  onClick={() => setIsFocusMode(!isFocusMode)}
-                  className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode
-                    ? 'border-purple-500'
-                    : 'border-gray-300'
-                    }`}
-                  aria-label="Toggle focus mode"
-                  title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
-                >
-                  {/* Lock icon hidden when focus is active */}
-                  <Target
-                    size={17}
-                    color={isFocusMode ? 'gray' : 'white'}
-                    className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-400 ${isFocusMode ? 'opacity-20' : 'opacity-100'
-                      }`}
-                  />
-
-                  {/* Eye icon shown when focus is active */}
-                  <Eye
-                    size={17}
-                    color={isFocusMode ? 'white' : 'black'}
-                    className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-500 ${isFocusMode ? 'opacity-100' : 'opacity-20'
-                      }`}
-                  />
-
-                  {/* Sliding solid block slider */}
-                  <div
-                    className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode
-                      ? 'translate-x-7 bg-purple-600'
-                      : 'translate-x-0 bg-gray-400'
-                      }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-
-            <div className="flex gap-2">
-              <button
-                onClick={toggleRecording}
-                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'}`}
-                title="Click to Talk"
-              >
-                <Mic size={20} />
-              </button>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Type a message or click the mic..."
-                className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
-                disabled={isLoading}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Focus Mode
+            </span>
+            
+            {/* Focus Toggle */}
+            <button
+              onClick={() => setIsFocusMode(!isFocusMode)}
+              className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${
+                isFocusMode ? 'border-purple-500' : 'border-gray-300'
+              }`}
+              aria-label="Toggle focus mode"
+              title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
+            >
+              <Target
+                size={17}
+                className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-400 ${isFocusMode ? 'opacity-20' : 'opacity-100'}`}
               />
-              <button
-                onClick={() => sendMessage()}
-                disabled={isLoading}
-                className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${isLoading
+              <Eye
+                size={17}
+                className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-500 ${isFocusMode ? 'opacity-100' : 'opacity-20'}`}
+              />
+              <div
+                className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${
+                  isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'
+                }`}
+              />
+            </button>
+
+            {/* Minimize/Maximize (Normal Mode Placement) */}
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition"
+              title="Minimize"
+            >
+              <Minimize2 size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input / Interaction Area */}
+      <div className={`flex gap-2 ${isMinimized ? 'flex-1 items-center' : 'w-full mb-4'}`}>
+        <button
+          onClick={toggleRecording}
+          className={`p-3 rounded-xl text-white shadow-md transition-colors ${
+            isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'
+          }`}
+          title="Click to Talk"
+        >
+          <Mic size={20} />
+        </button>
+
+        {!isMinimized ? (
+          <>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Type a message or click the mic..."
+              className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+              disabled={isLoading}
+            />
+            <button
+              onClick={() => sendMessage()}
+              disabled={isLoading}
+              className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${
+                isLoading
                   ? 'bg-indigo-400 cursor-not-allowed'
                   : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
-                  }`}
-              >
-                {isLoading ? 'Thinking...' : 'Send'}
-              </button>
-            </div>
-          </div>
-
-          <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
-            <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
-              <span>Manual State Override</span>
-              <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">▼</span>
-            </summary>
-
-            <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
-              {states.map(state => (
-                <button
-                  key={state}
-                  onClick={() => setAvatarState(state)}
-                  className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${avatarState === state
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  {formatLabel(state)}
-                </button>
-              ))}
-            </div>
-          </details>
-
-        </div>
+              }`}
+            >
+              {isLoading ? 'Thinking...' : 'Send'}
+            </button>
+          </>
+        ) : (
+          /* Text shown only when minimized next to the mic */  
+          <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
+            {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
+          </span>
+        )}
       </div>
+
+      {/* Minimize/Maximize (Minimized Mode Placement on the far right) */}
+      {isMinimized && (
+        <button
+          onClick={() => setIsMinimized(!isMinimized)}
+          className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm"
+          title="Maximize"
+        >
+          <Maximize2 size={18} />
+        </button>
+      )}
+
+    </div>
+
+    {/* Manual State Override Hidden cleanly when Minimized */}
+    {!isMinimized && (
+      <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
+        <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
+          <span>Manual State Override</span>
+          <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">
+            <ChevronDown size={16} strokeWidth={3} />
+          </span>
+        </summary>
+
+        <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
+          {states.map(state => (
+            <button
+              key={state}
+              onClick={() => setAvatarState(state)}
+              className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                avatarState === state
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {formatLabel(state)}
+            </button>
+          ))}
+        </div>
+      </details>
+    )}
+
+  </div>
+</div>
     </div>
   );
 };
