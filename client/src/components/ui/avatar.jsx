@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import axios from 'axios';
-import { ChevronDown, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
+import FlatUpArrow from '../../assets/icons/flatUpArrow';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
   const mountRef = useRef(null);
@@ -345,11 +346,11 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
             targetZ = 5.5;
             targetY = 1.0;
             targetLookAtY = 1;
-          } else if (state.includes('talking1')){
+          } else if (state.includes('talking1')) {
             targetX = 0.8;
             targetZ = 1.8;
             targetY = 1.6;
-          } else if (state.includes('talking2')){
+          } else if (state.includes('talking2')) {
             targetX = 0.7;
             targetZ = 1.8;
             targetY = 1.6;
@@ -460,6 +461,19 @@ const AvatarDemo = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  const [openChatPreview, setOpenChatPreview] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    { role: 'ai', text: "Hi there! I am Zara. How can I help you today?" }
+  ]);
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll to the bottom whenever a new message appears
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory, openChatPreview]);
+
   const states = [
     'idle', 'sad_idle', 'talking', 'talking1', 'talking2',
     'waving', 'silly_dancing', 'salute', 'rumba_dancing',
@@ -499,6 +513,8 @@ const AvatarDemo = () => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
+    setChatHistory(prev => [...prev, { role: 'user', text }]);
+
     setIsLoading(true);
     setInputText(''); // Clear input box
 
@@ -508,6 +524,10 @@ const AvatarDemo = () => {
       });
 
       const aiData = response.data;
+
+      if (aiData.replyText) {
+        setChatHistory(prev => [...prev, { role: 'ai', text: aiData.replyText }]);
+      }
 
       let audioObj = null;
       if (aiData.audio) {
@@ -548,157 +568,206 @@ const AvatarDemo = () => {
         isFocusMode={isFocusMode}
       />
 
-<div className={`w-full mb-4 transition-all duration-300 ${
-  isMinimized 
-    ? 'fixed bottom-4 right-4 max-w-xs z-50' // Floats elegantly to the bottom right when minimized
-    : 'max-w-3xl mx-auto'
-}`}>
+      <div className={`w-full mb-4 transition-all duration-300 ${isMinimized
+        ? 'fixed bottom-4 right-4 max-w-xs z-50' // Floats elegantly to the bottom right when minimized
+        : 'max-w-3xl mx-auto'
+        }`}>
 
-  {/* Hidden title when minimized to clear up vertical space */}
-  {!isMinimized && (
-    <h1 className={`${isFocusMode ? 'text-3xl' : 'text-xl'} font-bold text-center mb-2 text-white drop-shadow-md`}>
-      Meet Zara AI
-    </h1>
-  )}
-
-  {/* Glassmorphic Container */}
-  <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300">
-    
-    {/* Layout shifts to a compact row when minimized */}
-    <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-3' : 'flex-col'}`}>
-      
-      {/* Header section (Title & Toggles) */}
-      {!isMinimized && (
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Chat with Zara</h3>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Focus Mode
-            </span>
-            
-            {/* Focus Toggle */}
-            <button
-              onClick={() => setIsFocusMode(!isFocusMode)}
-              className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${
-                isFocusMode ? 'border-purple-500' : 'border-gray-300'
-              }`}
-              aria-label="Toggle focus mode"
-              title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
-            >
-              <Target
-                size={17}
-                className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-400 ${isFocusMode ? 'opacity-20' : 'opacity-100'}`}
-              />
-              <Eye
-                size={17}
-                className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-500 ${isFocusMode ? 'opacity-100' : 'opacity-20'}`}
-              />
-              <div
-                className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${
-                  isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'
-                }`}
-              />
-            </button>
-
-            {/* Minimize/Maximize (Normal Mode Placement) */}
-            <button
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition"
-              title="Minimize"
-            >
-              <Minimize2 size={18} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Input / Interaction Area */}
-      <div className={`flex gap-2 ${isMinimized ? 'flex-1 items-center' : 'w-full mb-4'}`}>
-        <button
-          onClick={toggleRecording}
-          className={`p-3 rounded-xl text-white shadow-md transition-colors ${
-            isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'
-          }`}
-          title="Click to Talk"
-        >
-          <Mic size={20} />
-        </button>
-
-        {!isMinimized ? (
-          <>
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Type a message or click the mic..."
-              className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
-              disabled={isLoading}
-            />
-            <button
-              onClick={() => sendMessage()}
-              disabled={isLoading}
-              className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${
-                isLoading
-                  ? 'bg-indigo-400 cursor-not-allowed'
-                  : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
-              }`}
-            >
-              {isLoading ? 'Thinking...' : 'Send'}
-            </button>
-          </>
-        ) : (
-          /* Text shown only when minimized next to the mic */  
-          <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
-            {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
-          </span>
+        {/* Hidden title when minimized to clear up vertical space */}
+        {!isMinimized && !openChatPreview && (
+          <h1 className={`${isFocusMode ? 'text-3xl' : 'text-xl'} font-bold text-center mb-2 text-white drop-shadow-md`}>
+            Meet Zara AI
+          </h1>
         )}
-      </div>
 
-      {/* Minimize/Maximize (Minimized Mode Placement on the far right) */}
-      {isMinimized && (
-        <button
-          onClick={() => setIsMinimized(!isMinimized)}
-          className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm"
-          title="Maximize"
-        >
-          <Maximize2 size={18} />
-        </button>
-      )}
+        {/* Glassmorphic Container */}
+        <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300">
 
-    </div>
+          {/* Layout shifts to a compact row when minimized */}
+          <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-2' : 'flex-col'}`}>
 
-    {/* Manual State Override Hidden cleanly when Minimized */}
-    {!isMinimized && (
-      <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
-        <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
-          <span>Manual State Override</span>
-          <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">
-            <ChevronDown size={16} strokeWidth={3} />
-          </span>
-        </summary>
+            {openChatPreview && !isMinimized && (
+              <div className="w-full transition-all duration-300 mb-2 border-b border-gray-200/60 pb-4">
+                <div className="flex justify-between items-center mb-3 px-1">
+                  <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
+                  <button 
+                    onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])} 
+                    className="text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
 
-        <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
-          {states.map(state => (
-            <button
-              key={state}
-              onClick={() => setAvatarState(state)}
-              className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                avatarState === state
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {formatLabel(state)}
-            </button>
-          ))}
+                {/* Chat Container */}
+                <div className="space-y-3 overflow-y-auto max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  
+                  {chatHistory.map((chat, index) => (
+                    <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`p-2.5 rounded-2xl max-w-[85%] text-sm shadow-sm ${
+                        chat.role === 'user'
+                          ? 'bg-indigo-600 text-white rounded-tr-sm' // Matches your Send button theme
+                          : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
+                      }`}>
+                        {chat.text}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Typing Indicator while waiting for backend */}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/90 border border-gray-200/80 p-3 rounded-2xl rounded-tl-sm flex gap-1.5 items-center shadow-sm">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Invisible div to attach the auto-scroll to */}
+                  <div ref={chatEndRef} />
+                </div>
+              </div>
+            )}
+            
+
+            {!isMinimized && (
+              <div className="flex items-start justify-center text-gray-500">
+                <span className={`inline-flex items-center justify-center origin-center transition-transform duration-300 ${openChatPreview ? 'rotate-180' : ''} text-gray-400 text-sm cursor-pointer`} onClick={() => setOpenChatPreview(!openChatPreview)}>
+                  <FlatUpArrow />
+                </span>
+              </div>
+            )}
+
+            {/* Header section (Title & Toggles) */}
+            {!isMinimized && (
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Chat with Zara</h3>
+
+
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Focus Mode
+                  </span>
+
+                  {/* Focus Toggle */}
+                  <button
+                    onClick={() => setIsFocusMode(!isFocusMode)}
+                    className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode ? 'border-purple-500' : 'border-gray-300'
+                      }`}
+                    aria-label="Toggle focus mode"
+                    title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
+                  >
+                    <Target
+                      size={17}
+                      className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-300 ${isFocusMode ? 'opacity-20 text-gray-800' : 'opacity-100'}`}
+                    />
+                    <Eye
+                      size={17}
+                      className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-300 ${isFocusMode ? 'opacity-100' : 'opacity-20 text-purple-700'}`}
+                    />
+                    <div
+                      className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'
+                        }`}
+                    />
+                  </button>
+
+                  {/* Minimize/Maximize (Normal Mode Placement) */}
+                  <button
+                    onClick={() => setIsMinimized(!isMinimized)}
+                    className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition"
+                    title="Minimize"
+                  >
+                    <Minimize2 size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Input / Interaction Area */}
+            <div className={`flex gap-2 ${isMinimized ? 'flex-1 items-center' : 'w-full mb-4'}`}>
+              <button
+                onClick={toggleRecording}
+                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'
+                  }`}
+                title="Click to Talk"
+              >
+                <Mic size={20} />
+              </button>
+
+              {!isMinimized ? (
+                <>
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    placeholder="Type a message or click the mic..."
+                    className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={() => sendMessage()}
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${isLoading
+                      ? 'bg-indigo-400 cursor-not-allowed'
+                      : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
+                      }`}
+                  >
+                    {isLoading ? 'Thinking...' : 'Send'}
+                  </button>
+                </>
+              ) : (
+                /* Text shown only when minimized next to the mic */
+                <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
+                  {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
+                </span>
+              )}
+            </div>
+
+            {/* Minimize/Maximize (Minimized Mode Placement on the far right) */}
+            {isMinimized && (
+              <button
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm"
+                title="Maximize"
+              >
+                <Maximize2 size={18} />
+              </button>
+            )}
+
+          </div>
+
+          {/* Manual State Override Hidden cleanly when Minimized */}
+          {!isMinimized && (
+            <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
+              <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
+                <span>Manual State Override</span>
+                <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">
+                  <ChevronDown size={16} strokeWidth={3} />
+                </span>
+              </summary>
+
+              <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
+                {states.map(state => (
+                  <button
+                    key={state}
+                    onClick={() => setAvatarState(state)}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${avatarState === state
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                  >
+                    {formatLabel(state)}
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+
         </div>
-      </details>
-    )}
-
-  </div>
-</div>
+      </div>
     </div>
   );
 };
