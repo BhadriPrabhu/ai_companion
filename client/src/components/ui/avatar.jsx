@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import axios from 'axios';
 import { ChevronDown, ChevronUp, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
 import FlatUpArrow from '../../assets/icons/flatUpArrow';
+import Loader from '../../assets/icons/loader';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
   const mountRef = useRef(null);
@@ -590,8 +591,8 @@ const AvatarDemo = () => {
               <div className="w-full transition-all duration-300 mb-2 border-b border-gray-200/60 pb-4">
                 <div className="flex justify-between items-center mb-3 px-1">
                   <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
-                  <button 
-                    onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])} 
+                  <button
+                    onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
                     className="text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
                   >
                     Clear
@@ -600,14 +601,13 @@ const AvatarDemo = () => {
 
                 {/* Chat Container */}
                 <div className="space-y-3 overflow-y-auto max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                  
+
                   {chatHistory.map((chat, index) => (
                     <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`p-2.5 rounded-2xl max-w-[85%] text-sm shadow-sm ${
-                        chat.role === 'user'
-                          ? 'bg-indigo-600 text-white rounded-tr-sm' // Matches your Send button theme
-                          : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
-                      }`}>
+                      <div className={`p-2.5 rounded-2xl max-w-[85%] text-sm shadow-sm ${chat.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-tr-sm' // Matches your Send button theme
+                        : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
+                        }`}>
                         {chat.text}
                       </div>
                     </div>
@@ -623,13 +623,13 @@ const AvatarDemo = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Invisible div to attach the auto-scroll to */}
                   <div ref={chatEndRef} />
                 </div>
               </div>
             )}
-            
+
 
             {!isMinimized && (
               <div className="flex items-start justify-center text-gray-500">
@@ -710,12 +710,18 @@ const AvatarDemo = () => {
                   <button
                     onClick={() => sendMessage()}
                     disabled={isLoading}
-                    className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${isLoading
+                    className={`px-6 py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading
                       ? 'bg-indigo-400 cursor-not-allowed'
                       : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
                       }`}
                   >
-                    {isLoading ? 'Thinking...' : 'Send'}
+                    {isLoading ? (<>
+                      <Loader />
+                      <span>Thinking...</span>
+                    </>
+                    ) : (
+                      'Send'
+                    )}
                   </button>
                 </>
               ) : (
