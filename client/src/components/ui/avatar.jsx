@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import axios from 'axios';
+import { Eye, Mic, Target } from 'lucide-react';
 
-const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed }) => {
+const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -61,6 +63,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     chicken_dance: { animation: "chicken_dance", expression: "happy" },
     shaking: { animation: "shaking", expression: "default" }
   };
+
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     if (!avatarRef.current) return;
     avatarRef.current.traverse((child) => {
@@ -102,7 +105,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
       });
 
       if (avatarRef.current && sceneRef.current) {
-         sceneRef.current.remove(avatarRef.current);
+        sceneRef.current.remove(avatarRef.current);
       }
 
       // Explicitly ONLY add the avatar to the scene. The ghost mesh stays hidden forever.
@@ -131,7 +134,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
           clip.tracks.forEach((track) => {
             const parts = track.name.split('.');
-            const property = parts.pop(); 
+            const property = parts.pop();
             const trackId = parts.join('.'); // This might be a UUID or a Name
 
             // Get the true name of the bone from the animation file
@@ -209,17 +212,22 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     if (!message) {
       changeAnimation('idle');
       setFacialExpression('default');
+      setLipsync(null);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       return;
     }
+
     if (message.animation) changeAnimation(message.animation);
     if (message.facialExpression) setFacialExpression(message.facialExpression);
     if (message.lipsync) setLipsync(message.lipsync);
 
-    if (message.audio) {
-      const audio = new Audio("data:audio/mp3;base64," + message.audio);
-      audioRef.current = audio;
-      audio.play();
-      audio.onended = () => {
+    // Give the 3D loop access to the playing audio so it can track the lipsync time!
+    if (message.audioObj) {
+      audioRef.current = message.audioObj;
+      message.audioObj.onended = () => {
         setLipsync(null);
         if (onMessagePlayed) onMessagePlayed();
       };
@@ -254,6 +262,15 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     const mount = mountRef.current;
     let animationFrameId;
 
+    const handleResize = () => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      rendererRef.current.setSize(width, height);
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+    };
+
     try {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf8fafc);
@@ -283,12 +300,36 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
       loadAvatar();
 
+      window.addEventListener('resize', handleResize);
+      handleResize();
+
       const animate = () => {
         animationFrameId = requestAnimationFrame(animate);
-        
+
         const delta = clockRef.current.getDelta();
         if (mixerRef.current) {
           mixerRef.current.update(delta);
+        }
+
+        if (cameraRef.current) {
+          const state = currentAvatarStateRef.current;
+          let targetZ = 4.0; // Default Idle distance
+          let targetY = 1.4; // Default Height
+
+          if (isFocusMode) {
+            targetZ = 1.4; // Deep close-up zoom
+            targetY = 1.63; // Centered closely on face
+          } else if (state.includes('talking')) {
+            targetZ = 1.8; // Zoom in close for talking
+            targetY = 1.6; // Move up to face level
+          } else if (state.includes('dancing') || state.includes('chicken') || state.includes('bow') || state.includes('salute') || state.includes('shaking') || state.includes('clapping') || state.includes('disappointed')) {
+            targetZ = 5.5; // Zoom way out for full body
+            targetY = 1.0; // Move down to capture feet
+          }
+
+          // Smoothly glide the camera to the target position
+          cameraRef.current.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.05);
+          cameraRef.current.lookAt(0, 1.2, 0); // Keep looking at the chest/neck area
         }
 
         if (avatarRef.current) {
@@ -316,7 +357,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
                 const viseme = visemeMapping[mouthCue.value];
                 if (viseme) {
                   appliedMorphTargets.push(viseme);
-                  lerpMorphTarget(viseme, 1, 0.2);
+                  lerpMorphTarget(viseme, 1, 0.95);
                 }
                 break;
               }
@@ -324,7 +365,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
             Object.values(visemeMapping).forEach((viseme) => {
               if (!appliedMorphTargets.includes(viseme)) {
-                lerpMorphTarget(viseme, 0, 0.1);
+                lerpMorphTarget(viseme, 0, 0.95);
               }
             });
           }
@@ -348,12 +389,13 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
         mount.removeChild(rendererRef.current.domElement);
       }
       if (rendererRef.current) rendererRef.current.dispose();
+      window.removeEventListener('resize', handleResize);
     };
-  }, [onLoad]);
+  }, [onLoad, isFocusMode]);
 
   return (
-    <div className={`relative ${className}`}>
-      <div ref={mountRef} className="w-[400px] h-[400px] rounded-3xl overflow-hidden shadow-2xl relative" />
+    <div className={`fixed top-0 left-0 w-screen h-screen -z-10 ${className}`}>
+      <div ref={mountRef} className="w-full h-full" />
     </div>
   );
 };
@@ -361,68 +403,204 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 const AvatarDemo = () => {
   const [avatarState, setAvatarState] = useState('idle');
   const [message, setMessage] = useState(null);
+  const [inputText, setInputText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
   const states = [
-    'idle', 'sad_idle', 'talking', 'talking1', 'talking2', 'waving', 
-    'silly_dancing', 'salute', 'rumba_dancing', 'formal_bow', 
-    'laughing', 'hip_hop_dance', 'disappointed', 'clapping', 
-    'crying', 'chicken_dance', 'shaking'
+    'idle', 'sad_idle', 'talking', 'talking1', 'talking2',
+    'waving', 'silly_dancing', 'salute', 'rumba_dancing',
+    'formal_bow', 'laughing', 'hip_hop_dance', 'disappointed',
+    'clapping', 'crying', 'chicken_dance', 'shaking'
   ];
 
-  const simulateMessage = () => {
-    setMessage({
-      animation: 'talking1',
-      facialExpression: 'smile',
-      lipsync: {
-        mouthCues: [
-          { start: 0, end: 0.1, value: 'A' },
-          { start: 0.1, end: 0.3, value: 'E' },
-          { start: 0.3, end: 0.5, value: 'I' },
-        ]
-      }
-    });
+  // Initialize browser microphone
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+  if (recognition) {
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputText(transcript);
+      sendMessage(transcript); // Auto-send when you finish talking
+    };
+
+    recognition.onend = () => setIsRecording(false);
+  }
+
+  const toggleRecording = () => {
+    if (!recognition) return alert("Your browser doesn't support microphone input.");
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      recognition.start();
+      setIsRecording(true);
+    }
   };
 
-  const formatLabel = (str) => {
-    return str.replace(/_/g, ' ')
-              .split(' ')
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ');
+  const sendMessage = async (textToSend) => {
+    const text = textToSend || inputText;
+    if (!text.trim()) return;
+
+    setIsLoading(true);
+    setInputText(''); // Clear input box
+
+    try {
+      const response = await axios.post('http://localhost:3001/api/chat', {
+        message: text,
+      });
+
+      const aiData = response.data;
+
+      let audioObj = null;
+      if (aiData.audio) {
+        try {
+          audioObj = new Audio("data:audio/mp3;base64," + aiData.audio);
+          await audioObj.play();
+        } catch (e) {
+          console.error("Audio play error:", e);
+        }
+      }
+
+      setMessage({
+        animation: aiData.animation,
+        facialExpression: aiData.facialExpression,
+        lipsync: aiData.lipsync,
+        audioObj: audioObj
+      });
+
+    } catch (error) {
+      console.error("Error communicating with backend:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const formatLabel = (str) => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Enhanced AI Avatar</h1>
-        <div className="flex justify-center mb-8">
-          <AIEmotionAnalyzer
-            avatarState={avatarState}
-            message={message}
-            onMessagePlayed={() => setMessage(null)}
-          />
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Avatar Controls</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Avatar State:</label>
-              <div className="flex flex-wrap gap-2">
-                {states.map(state => (
-                  <button
-                    key={state}
-                    onClick={() => setAvatarState(state)}
-                    className={`px-3 py-1 rounded text-sm ${avatarState === state ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                  >
-                    {formatLabel(state)}
-                  </button>
-                ))}
+    // ✅ Removed the solid background, added flex to push controls to the bottom
+    <div className="min-h-screen flex flex-col justify-end p-4 pointer-events-none">
+
+      {/* The Full-Screen 3D Canvas */}
+      <AIEmotionAnalyzer
+        avatarState={avatarState}
+        message={message}
+        onMessagePlayed={() => setMessage(null)}
+        isFocusMode={isFocusMode}
+      />
+
+      <div className="max-w-3xl mx-auto w-full mb-4">
+        <h1 className="text-3xl font-bold text-center mb-2 text-white drop-shadow-md">
+          Meet Zara AI
+        </h1>
+
+        {/* ✅ Made the UI box transparent (glassmorphism) and restored pointer events */}
+        <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50">
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Chat with Zara</h3>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Focus Mode
+                </span>
+                <button
+                  onClick={() => setIsFocusMode(!isFocusMode)}
+                  className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode
+                      ? 'border-purple-500'
+                      : 'border-gray-300'
+                    }`}
+                  aria-label="Toggle focus mode"
+                  title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
+                >
+                  {/* Lock icon hidden when focus is active */}
+                  <Target
+                    size={17}
+                    color={isFocusMode ? 'gray' : 'white'}
+                    className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-400 ${isFocusMode ? 'opacity-20' : 'opacity-100'
+                      }`}
+                  />
+
+                  {/* Eye icon shown when focus is active */}
+                  <Eye
+                    size={17}
+                    color={isFocusMode ? 'white' : 'black'}
+                    className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-500 ${isFocusMode ? 'opacity-100' : 'opacity-20'
+                      }`}
+                  />
+
+                  {/* Sliding solid block slider */}
+                  <div
+                    className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode
+                        ? 'translate-x-7 bg-purple-600'
+                        : 'translate-x-0 bg-gray-400'
+                      }`}
+                  />
+                </button>
               </div>
             </div>
-            <div>
-              <button onClick={simulateMessage} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                Simulate Speaking Message
+
+
+            <div className="flex gap-2">
+              <button
+                onClick={toggleRecording}
+                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'}`}
+                title="Click to Talk"
+              >
+                <Mic size={20} />
+              </button>
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Type a message or click the mic..."
+                className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                disabled={isLoading}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={isLoading}
+                className={`px-6 py-2.5 text-white font-semibold rounded-xl shadow-md transition-all duration-200 ${isLoading
+                  ? 'bg-indigo-400 cursor-not-allowed'
+                  : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
+                  }`}
+              >
+                {isLoading ? 'Thinking...' : 'Send'}
               </button>
             </div>
           </div>
+
+          <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
+            <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
+              <span>Manual State Override</span>
+              <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">▼</span>
+            </summary>
+
+            <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
+              {states.map(state => (
+                <button
+                  key={state}
+                  onClick={() => setAvatarState(state)}
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${avatarState === state
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                >
+                  {formatLabel(state)}
+                </button>
+              ))}
+            </div>
+          </details>
+
         </div>
       </div>
     </div>

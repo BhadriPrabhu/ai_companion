@@ -11,8 +11,14 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^2.3.0",
+    "axios": "^1.16.1",
+    "child_process": "^1.0.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "google-tts-api": "^2.0.2",
+    "tmp": "^0.2.5",
+    "util": "^0.12.5"
   }
 }
