@@ -462,11 +462,24 @@ const AvatarDemo = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  // 🚨 NEW: Wake Word State
+  const [isWakeWordActive, setIsWakeWordActive] = useState(false);
+
   const [openChatPreview, setOpenChatPreview] = useState(false);
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', text: "Hi there! I am Zara. How can I help you today?" }
   ]);
   const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  // Refs to prevent "Stale Closures" inside the Speech Recognition event listeners
+  const isRecordingRef = useRef(isRecording);
+  const isWakeWordActiveRef = useRef(isWakeWordActive);
+  const inputTextRef = useRef(inputText);
+
+  useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
+  useEffect(() => { isWakeWordActiveRef.current = isWakeWordActive; }, [isWakeWordActive]);
+  useEffect(() => { inputTextRef.current = inputText; }, [inputText]);
 
   // Auto-scroll to the bottom whenever a new message appears
   useEffect(() => {
@@ -482,45 +495,108 @@ const AvatarDemo = () => {
     'clapping', 'crying', 'chicken_dance', 'shaking'
   ];
 
-  // Initialize browser microphone
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+  // 🚨 NEW: Continuous Speech Recognition & Interruption Logic
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
 
-  if (recognition) {
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInputText(transcript);
-      sendMessage(transcript); // Auto-send when you finish talking
+      let final = '';
+      let interim = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+        else interim += event.results[i][0].transcript;
+      }
+
+      const currentText = final || interim;
+      const lowerText = currentText.toLowerCase();
+
+      console.log("Recognized Speech:", currentText, "| Final:", final);
+
+      // WAKE WORD DETECTION & INTERRUPTION
+      if (lowerText.includes('hey zara') || lowerText.includes('hi zara') || lowerText.includes('ok zara') || lowerText.includes('hello zara') || lowerText.includes('hey sara') || lowerText.includes('hi sara') || lowerText.includes('ok sara') || lowerText.includes('hello sara')) {
+
+        // 🚨 1. INTERRUPT HER IMMEDIATELY! (Stops audio & animation)
+        setMessage(null);
+
+        if (!isRecordingRef.current) setIsRecording(true);
+
+        // 2. Extract only the words spoken AFTER "Hey Zara"
+        const splitPoint = lowerText.lastIndexOf('hey zara') !== -1 ? 'hey zara' : lowerText.lastIndexOf('hi zara') !== -1 ? 'hi zara' : lowerText.lastIndexOf('ok zara') !== -1 ? 'ok zara' : lowerText.lastIndexOf('hello zara') !== -1 ? 'hello zara' : lowerText.lastIndexOf('hey sara') !== -1 ? 'hey sara' : lowerText.lastIndexOf('hi sara') !== -1 ? 'hi sara' : lowerText.lastIndexOf('ok sara') !== -1 ? 'ok sara' : 'hello sara';
+        const parts = lowerText.split(splitPoint);
+        const command = parts[parts.length - 1].trim();
+
+        setInputText(command);
+
+        // 3. Send automatically when they stop speaking
+        if (final && command) {
+          sendMessage(command);
+          setIsRecording(false);
+        }
+      }
+      // MANUAL MIC CLICK HANDLING
+      else if (isRecordingRef.current) {
+        setMessage(null); // Interrupt if they manually click the mic while she's talking
+        setInputText(currentText);
+        if (final) {
+          sendMessage(currentText);
+          setIsRecording(false);
+        }
+      }
     };
 
-    recognition.onend = () => setIsRecording(false);
-  }
+    // Auto-restart the microphone loop if Wake Word mode is ON
+    recognition.onend = () => {
+      if (isWakeWordActiveRef.current) {
+        try { recognition.start(); } catch (e) { }
+      } else {
+        setIsRecording(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => recognition.stop();
+  }, []); // Only runs once on mount
+
+  const toggleWakeWord = () => {
+    const newState = !isWakeWordActive;
+    setIsWakeWordActive(newState);
+    if (newState) {
+      try { recognitionRef.current?.start(); } catch(e) {}
+    } else {
+      if (!isRecording) recognitionRef.current?.stop();
+    }
+  };
 
   const toggleRecording = () => {
-    if (!recognition) return alert("Your browser doesn't support microphone input.");
+    if (!recognitionRef.current) return alert("Your browser doesn't support microphone input.");
     if (isRecording) {
-      recognition.stop();
+      recognitionRef.current.stop();
     } else {
-      recognition.start();
+      recognitionRef.current.start();
       setIsRecording(true);
     }
   };
 
   const sendMessage = async (textToSend) => {
-    const text = textToSend || inputText;
-    if (!text.trim()) return;
+    const text = typeof textToSend === 'string' ? textToSend : inputTextRef.current;
+    if (!text || !text.trim()) return;
 
     setChatHistory(prev => [...prev, { role: 'user', text }]);
 
     setIsLoading(true);
     setInputText(''); // Clear input box
+    setMessage(null); // Reset avatar to idle while waiting
 
     try {
-      const response = await axios.post('http://localhost:3001/api/chat', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, {
         message: text,
       });
 
@@ -559,7 +635,7 @@ const AvatarDemo = () => {
 
   return (
     // ✅ Removed the solid background, added flex to push controls to the bottom
-    <div className="min-h-screen flex flex-col justify-end p-4 pointer-events-none">
+    <div className="h-[100dvh] w-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
 
       {/* The Full-Screen 3D Canvas */}
       <AIEmotionAnalyzer
@@ -569,20 +645,20 @@ const AvatarDemo = () => {
         isFocusMode={isFocusMode}
       />
 
-      <div className={`w-full mb-4 transition-all duration-300 ${isMinimized
-        ? 'fixed bottom-4 right-4 max-w-xs z-50' // Floats elegantly to the bottom right when minimized
-        : 'max-w-3xl mx-auto'
+      <div className={`transition-all duration-300 ${isMinimized
+        ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
+        : 'w-full max-w-3xl mx-auto mb-4' // Full width when expanded
         }`}>
 
         {/* Hidden title when minimized to clear up vertical space */}
         {!isMinimized && !openChatPreview && (
-          <h1 className={`${isFocusMode ? 'text-3xl' : 'text-xl'} font-bold text-center mb-2 text-white drop-shadow-md`}>
+          <h1 className={`${isFocusMode ? 'text-4xl sm:text-3xl' : 'text-lg sm:text-xl'} font-bold text-center mb-1 sm:mb-2 text-white drop-shadow-md`}>
             Meet Zara AI
           </h1>
         )}
 
         {/* Glassmorphic Container */}
-        <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300">
+        <div className={`bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300 ${isMinimized ? 'p-2' : 'p-3 sm:p-4'}`}>
 
           {/* Layout shifts to a compact row when minimized */}
           <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-2' : 'flex-col'}`}>
@@ -593,19 +669,18 @@ const AvatarDemo = () => {
                   <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
                   <button
                     onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
-                    className="text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
+                    className="text-[12px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
+                    title="Clear Conversation"
                   >
                     Clear
                   </button>
                 </div>
 
-                {/* Chat Container */}
-                <div className="space-y-3 overflow-y-auto max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-
+                <div className="space-y-3 overflow-y-auto max-h-[35vh] sm:max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   {chatHistory.map((chat, index) => (
                     <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`p-2.5 rounded-2xl max-w-[85%] text-sm shadow-sm ${chat.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-tr-sm' // Matches your Send button theme
+                      <div className={`p-2.5 rounded-2xl max-w-[92%] sm:max-w-[85%] text-sm shadow-sm ${chat.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-tr-sm' 
                         : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
                         }`}>
                         {chat.text}
@@ -613,7 +688,6 @@ const AvatarDemo = () => {
                     </div>
                   ))}
 
-                  {/* Typing Indicator while waiting for backend */}
                   {isLoading && (
                     <div className="flex justify-start">
                       <div className="bg-white/90 border border-gray-200/80 p-3 rounded-2xl rounded-tl-sm flex gap-1.5 items-center shadow-sm">
@@ -623,8 +697,6 @@ const AvatarDemo = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Invisible div to attach the auto-scroll to */}
                   <div ref={chatEndRef} />
                 </div>
               </div>
@@ -633,65 +705,60 @@ const AvatarDemo = () => {
 
             {!isMinimized && (
               <div className="flex items-start justify-center text-gray-500">
-                <span className={`inline-flex items-center justify-center origin-center transition-transform duration-300 ${openChatPreview ? 'rotate-180' : ''} text-gray-400 text-sm cursor-pointer`} onClick={() => setOpenChatPreview(!openChatPreview)}>
+                <span className={`inline-flex items-center justify-center origin-center transition-transform duration-300 ${openChatPreview ? 'rotate-180' : ''} text-gray-400 text-sm cursor-pointer`} title="Open Chat Preview" onClick={() => setOpenChatPreview(!openChatPreview)}>
                   <FlatUpArrow />
                 </span>
               </div>
             )}
 
-            {/* Header section (Title & Toggles) */}
             {!isMinimized && (
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Chat with Zara</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Chat with Zara</h3>
 
+                <div className="flex items-center gap-4">
+                  
+                  {/* 🚨 NEW: Wake Word Toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Wake Word
+                    </span>
+                    <button
+                      onClick={toggleWakeWord}
+                      className={`relative w-12 h-6 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-0.5 ${isWakeWordActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-100'}`}
+                      title="Say 'Hey Zara' to wake her up"
+                    >
+                      <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isWakeWordActive ? 'translate-x-6 bg-green-500' : 'translate-x-0 bg-gray-400'}`} />
+                    </button>
+                  </div>
 
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Focus Mode
-                  </span>
+                  <div className="w-px h-6 bg-gray-300 hidden sm:block"></div>
 
                   {/* Focus Toggle */}
-                  <button
-                    onClick={() => setIsFocusMode(!isFocusMode)}
-                    className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode ? 'border-purple-500' : 'border-gray-300'
-                      }`}
-                    aria-label="Toggle focus mode"
-                    title={isFocusMode ? "Switch to Normal Mode" : "Switch to Focus Mode"}
-                  >
-                    <Target
-                      size={17}
-                      className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-300 ${isFocusMode ? 'opacity-20 text-gray-800' : 'opacity-100'}`}
-                    />
-                    <Eye
-                      size={17}
-                      className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-300 ${isFocusMode ? 'opacity-100' : 'opacity-20 text-purple-700'}`}
-                    />
-                    <div
-                      className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'
-                        }`}
-                    />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Focus Mode
+                    </span>
+                    <button
+                      onClick={() => setIsFocusMode(!isFocusMode)}
+                      className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode ? 'border-purple-500' : 'border-gray-300'}`}
+                    >
+                      <Target size={17} className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-300 ${isFocusMode ? 'opacity-20 text-gray-800' : 'opacity-100'}`} />
+                      <Eye size={17} className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-300 ${isFocusMode ? 'opacity-100' : 'opacity-20 text-purple-700'}`} />
+                      <div className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'}`} />
+                    </button>
+                  </div>
 
-                  {/* Minimize/Maximize (Normal Mode Placement) */}
-                  <button
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition"
-                    title="Minimize"
-                  >
+                  <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition">
                     <Minimize2 size={18} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Input / Interaction Area */}
-            <div className={`flex gap-2 ${isMinimized ? 'flex-1 items-center' : 'w-full mb-4'}`}>
+            <div className={`flex gap-1.5 sm:gap-2 ${isMinimized ? 'justify-center items-center' : 'w-full mb-4'}`}>
               <button
                 onClick={toggleRecording}
-                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'
-                  }`}
-                title="Click to Talk"
+                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'}`}
               >
                 <Mic size={20} />
               </button>
@@ -703,42 +770,27 @@ const AvatarDemo = () => {
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type a message or click the mic..."
-                    className="flex-1 bg-white/90 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                    placeholder={isWakeWordActive ? "Say 'Hey Zara' or type a message..." : "Type a message or click the mic..."}
+                    className="flex-1 min-w-0 bg-white border border-gray-300 rounded-xl px-3 sm:px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 shadow-sm"
                     disabled={isLoading}
                   />
                   <button
                     onClick={() => sendMessage()}
                     disabled={isLoading}
-                    className={`px-6 py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading
-                      ? 'bg-indigo-400 cursor-not-allowed'
-                      : 'bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 shadow-indigo-950/20 active:scale-[0.98]'
-                      }`}
+                    className={`px-3 sm:px-6 py-2 sm:py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 shadow-indigo-600/20 active:scale-[0.98]'}`}
                   >
-                    {isLoading ? (<>
-                      <Loader />
-                      <span>Thinking...</span>
-                    </>
-                    ) : (
-                      'Send'
-                    )}
+                    {isLoading ? (<><Loader /><span className="hidden sm:inline">Thinking...</span></>) : ('Send')}
                   </button>
                 </>
               ) : (
-                /* Text shown only when minimized next to the mic */
                 <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
                   {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
                 </span>
               )}
             </div>
 
-            {/* Minimize/Maximize (Minimized Mode Placement on the far right) */}
             {isMinimized && (
-              <button
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm"
-                title="Maximize"
-              >
+              <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm">
                 <Maximize2 size={18} />
               </button>
             )}

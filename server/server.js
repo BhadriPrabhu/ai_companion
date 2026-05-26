@@ -62,7 +62,7 @@ app.post('/api/chat', async (req, res) => {
 
         // 1. Get the Brain's response (Gemini)
         const aiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-2.5-flash',
             contents: userMessage,
             config: {
                 systemInstruction: systemInstruction,
@@ -87,7 +87,7 @@ app.post('/api/chat', async (req, res) => {
         const audioBuffer = Buffer.from(await result.audio.arrayBuffer());
         const audioBase64 = audioBuffer.toString('base64');
         aiData.audio = audioBase64;
-        
+
 
         // 3. Generate Lip Sync (Rhubarb)
         console.log("Generating lip sync data...");
