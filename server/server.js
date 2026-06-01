@@ -236,5 +236,38 @@ app.get('/api/chats/:chatId/messages', async (req, res) => {
     }
 });
 
+// 4. Update chat title
+app.put('/api/chats/:chatId', async (req, res) => {
+    try {
+        const { title } = req.body;
+        if (!title) return res.status(400).json({ error: "Title is required" });
+
+        const result = await pool.query(
+            'UPDATE chats SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
+            [title, req.params.chatId, CURRENT_USER_ID]
+        );
+        
+        if (result.rows.length === 0) return res.status(404).json({ error: "Chat not found" });
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 5. Delete a chat
+app.delete('/api/chats/:chatId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM chats WHERE id = $1 AND user_id = $2 RETURNING *',
+            [req.params.chatId, CURRENT_USER_ID]
+        );
+
+        if (result.rows.length === 0) return res.status(404).json({ error: "Chat not found" });
+        res.json({ message: "Chat deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
