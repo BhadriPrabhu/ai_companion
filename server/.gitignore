@@ -5,5 +5,3 @@ dist-ssr
 *.local
 .env.*.local
 !.env.example
-
-table.txt
