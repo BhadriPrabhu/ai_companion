@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Edit2, Trash2, Check, X, Plus, Sparkle } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose } from 'lucide-react';
 
 const Sidebar = ({ currentChatId, onSelectChat }) => {
     const [chats, setChats] = useState([]);
@@ -98,11 +98,16 @@ const Sidebar = ({ currentChatId, onSelectChat }) => {
     return (
         <div className="w-64 h-full bg-white/60 backdrop-blur-md border-r border-white/60 shadow-xl text-gray-800 p-4 flex flex-col fixed left-0 top-0 z-50 transition-all duration-300">
 
-            <div className="flex items-center gap-2.5 px-2 mb-4 select-none">
-                <Sparkle className="text-indigo-500" size={24} strokeWidth={2.5} />
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">
-                    Zara AI
-                </h1>
+            <div className="flex items-center justify-between gap-2.5 px-2 mb-4 select-none">
+                <div className="flex items-center gap-2">
+                    <Sparkle className="text-indigo-500" size={24} strokeWidth={2.5} />
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">
+                        Zara AI
+                    </h1>
+                </div>
+                <div className="p-1 rounded-md hover:bg-gray-300/50 cursor-pointer transition-colors rotate-180" title="Close Sidebar">
+                    <PanelRightClose size={20} />
+                </div>
             </div>
 
             <button
@@ -121,8 +126,8 @@ const Sidebar = ({ currentChatId, onSelectChat }) => {
                         key={chat.id}
                         onClick={() => onSelectChat(chat.id)}
                         className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border ${currentChatId === chat.id
-                                ? 'bg-white/90 border-gray-200/80 shadow-sm text-indigo-700 font-medium'
-                                : 'border-transparent hover:bg-white/50 hover:border-gray-200/50 text-gray-700'
+                            ? 'bg-white/90 border-gray-200/80 shadow-sm text-indigo-700 font-medium'
+                            : 'border-transparent hover:bg-white/50 hover:border-gray-200/50 text-gray-700'
                             }`}
                     >
                         {editingChatId === chat.id ? (
