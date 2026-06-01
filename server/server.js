@@ -9,6 +9,20 @@ const exec = util.promisify(require('child_process').exec);
 const tmp = require('tmp'); // Creates temporary files that auto-delete
 const axios = require('axios');
 
+const { Pool } = require('pg');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+pool.connect()
+    .then((client) => {
+        console.log("Database connected successfully!");
+        client.release();
+    })
+    .catch((err) => {
+        console.error("Database connection failed:", err.message);
+    });
+
 const app = express();
 app.use(cors());
 app.use(express.json());
