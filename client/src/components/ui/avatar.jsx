@@ -668,12 +668,14 @@ const AvatarDemo = () => {
   return (
     <div className="h-[100dvh] w-full flex">
 
-      {isSidebarOpen && (
-        <Sidebar
-          currentChatId={currentChatId}
-          onSelectChat={(id) => setCurrentChatId(id)}
-        />
-      )}
+
+      <Sidebar
+        currentChatId={currentChatId}
+        onSelectChat={(id) => setCurrentChatId(id)}
+        setIsSidebarOpen={setIsSidebarOpen}
+        isSidebarOpen={isSidebarOpen}
+      />
+
 
       <div className={`flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'ml-64 w-[calc(100%-16rem)]' : 'w-full'}`}>
         {/* The Full-Screen 3D Canvas */}

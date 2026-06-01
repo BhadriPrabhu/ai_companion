@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
-const Sidebar = ({ currentChatId, onSelectChat }) => {
+const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen }) => {
     const [chats, setChats] = useState([]);
 
     // State for editing
@@ -96,91 +96,106 @@ const Sidebar = ({ currentChatId, onSelectChat }) => {
     };
 
     return (
-        <div className="w-64 h-full bg-white/60 backdrop-blur-md border-r border-white/60 shadow-xl text-gray-800 p-4 flex flex-col fixed left-0 top-0 z-50 transition-all duration-300">
+        <>
+            {isSidebarOpen ? (
+                <div className="w-64 h-full bg-white/60 backdrop-blur-md border-r border-white/60 shadow-xl text-gray-800 p-4 flex flex-col fixed left-0 top-0 z-50 transition-all duration-300">
 
-            <div className="flex items-center justify-between gap-2.5 px-2 mb-4 select-none">
-                <div className="flex items-center gap-2">
-                    <Sparkle className="text-indigo-500" size={24} strokeWidth={2.5} />
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">
-                        Zara AI
-                    </h1>
-                </div>
-                <div className="p-1 rounded-md hover:bg-gray-300/50 cursor-pointer transition-colors rotate-180" title="Close Sidebar">
-                    <PanelRightClose size={20} />
-                </div>
-            </div>
+                    <div className="flex items-center justify-between gap-2.5 px-2 mb-4 select-none">
+                        <div className="flex items-center gap-2">
+                            <Sparkle className="text-indigo-500" size={24} strokeWidth={2.5} />
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">
+                                Zara AI
+                            </h1>
+                        </div>
+                        <div className="p-1 rounded-md hover:bg-gray-300/50 cursor-pointer transition-colors rotate-180" title="Close Sidebar" onClick={() => setIsSidebarOpen(false)}>
+                            <PanelRightClose size={20} />
+                        </div>
+                    </div>
 
-            <button
-                onClick={createNewChat}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl mb-6 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
-            >
-                <Plus size={18} />
-                New Chat
-            </button>
-
-            <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3 px-1">Recent Chats</h3>
-
-                {chats.map(chat => (
-                    <div
-                        key={chat.id}
-                        onClick={() => onSelectChat(chat.id)}
-                        className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border ${currentChatId === chat.id
-                            ? 'bg-white/90 border-gray-200/80 shadow-sm text-indigo-700 font-medium'
-                            : 'border-transparent hover:bg-white/50 hover:border-gray-200/50 text-gray-700'
-                            }`}
+                    <button
+                        onClick={createNewChat}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl mb-6 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
                     >
-                        {editingChatId === chat.id ? (
-                            // Edit Mode UI
-                            <div className="flex items-center w-full gap-2">
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleEditSave(e, chat.id)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex-1 min-w-0 bg-white text-sm text-gray-800 px-2 py-1 rounded-md outline-none border border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
-                                />
-                                <button onClick={(e) => handleEditSave(e, chat.id)} className="text-green-600 hover:text-green-700 transition-colors">
-                                    <Check size={16} />
-                                </button>
-                                <button onClick={handleEditCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ) : (
-                            // Normal View Mode UI
-                            <>
-                                <p className="text-sm truncate flex-1 pr-2">{chat.title}</p>
+                        <Plus size={18} />
+                        New Chat
+                    </button>
 
-                                {/* Action buttons appear on group hover */}
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => handleEditStart(e, chat)}
-                                        className="text-gray-400 hover:text-indigo-600 transition-colors"
-                                        title="Edit Title"
-                                    >
-                                        <Edit2 size={14} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => handleDelete(e, chat.id)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors"
-                                        title="Delete Chat"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            </>
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                        <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3 px-1">Recent Chats</h3>
+
+                        {chats.map(chat => (
+                            <div
+                                key={chat.id}
+                                onClick={() => onSelectChat(chat.id)}
+                                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border ${currentChatId === chat.id
+                                    ? 'bg-white/90 border-gray-200/80 shadow-sm text-indigo-700 font-medium'
+                                    : 'border-transparent hover:bg-white/50 hover:border-gray-200/50 text-gray-700'
+                                    }`}
+                            >
+                                {editingChatId === chat.id ? (
+                                    // Edit Mode UI
+                                    <div className="flex items-center w-full gap-2">
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={editTitle}
+                                            onChange={(e) => setEditTitle(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleEditSave(e, chat.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="flex-1 min-w-0 bg-white text-sm text-gray-800 px-2 py-1 rounded-md outline-none border border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
+                                        />
+                                        <button onClick={(e) => handleEditSave(e, chat.id)} className="text-green-600 hover:text-green-700 transition-colors">
+                                            <Check size={16} />
+                                        </button>
+                                        <button onClick={handleEditCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    // Normal View Mode UI
+                                    <>
+                                        <p className="text-sm truncate flex-1 pr-2">{chat.title}</p>
+
+                                        {/* Action buttons appear on group hover */}
+                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => handleEditStart(e, chat)}
+                                                className="text-gray-400 hover:text-indigo-600 transition-colors"
+                                                title="Edit Title"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(e, chat.id)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                                title="Delete Chat"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+
+                        {chats.length === 0 && (
+                            <p className="text-xs text-gray-400 italic text-center mt-6">No recent chats.</p>
                         )}
                     </div>
-                ))}
+                </div>
+            ) : (
+                <div className="fixed top-4 left-4 z-50">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="bg-indigo-600 text-white p-2 rounded-full shadow-lg hover:bg-indigo-700 transition-colors rotate-180"
+                        title="Open Sidebar"
+                    >
+                        <PanelRightOpen size={20} />
+                    </button>
+                </div>
+            )}
+        </>
 
-                {chats.length === 0 && (
-                    <p className="text-xs text-gray-400 italic text-center mt-6">No recent chats.</p>
-                )}
-            </div>
-        </div>
     );
 };
 
