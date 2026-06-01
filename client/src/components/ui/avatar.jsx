@@ -7,7 +7,7 @@ import FlatUpArrow from '../../assets/icons/flatUpArrow';
 import Loader from '../../assets/icons/loader';
 import Sidebar from './sidebar';
 
-const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
+const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode, isSidebarOpen }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -280,10 +280,12 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     const mount = mountRef.current;
     let animationFrameId;
 
+    let resizeObserver;
+
     const handleResize = () => {
-      if (!rendererRef.current || !cameraRef.current) return;
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      if (!rendererRef.current || !cameraRef.current || !mountRef.current) return;
+      const width = mountRef.current.clientWidth;
+      const height = mountRef.current.clientHeight;
       rendererRef.current.setSize(width, height);
       cameraRef.current.aspect = width / height;
       cameraRef.current.updateProjectionMatrix();
@@ -318,7 +320,12 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
       loadAvatar();
 
-      window.addEventListener('resize', handleResize);
+      resizeObserver = new ResizeObserver(() => {
+        handleResize();
+      });
+      if (mount) {
+        resizeObserver.observe(mount);
+      }
       handleResize();
 
       const animate = () => {
@@ -436,19 +443,23 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
       setError('Failed to initialize 3D environment');
     }
 
-    return () => {
+return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      
+      if (resizeObserver) {
+        resizeObserver.disconnect(); 
+      }
+      
       if (rendererRef.current?.domElement && mount.contains(rendererRef.current.domElement)) {
         mount.removeChild(rendererRef.current.domElement);
       }
       if (rendererRef.current) rendererRef.current.dispose();
-      window.removeEventListener('resize', handleResize);
     };
   }, [onLoad]);
 
   return (
-    <div className={`fixed top-0 left-0 w-screen h-screen -z-10 ${className}`}>
+    <div className={`absolute inset-0 -z-10 ${className}`}>
       <div ref={mountRef} className="w-full h-full" />
     </div>
   );
@@ -666,24 +677,26 @@ const AvatarDemo = () => {
 
 
   return (
-    <div className="h-[100dvh] w-full flex">
+    <div className={`h-[100dvh] w-full grid transition-all duration-300 ${isSidebarOpen ? 'grid-cols-[16rem_1fr]' : 'grid-cols-[0px_1fr]'}`}>
+
+      <div className="relative h-full z-50 overflow-hidden">
+        <Sidebar
+          currentChatId={currentChatId}
+          onSelectChat={(id) => setCurrentChatId(id)}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isSidebarOpen={isSidebarOpen}
+        />
+      </div>
 
 
-      <Sidebar
-        currentChatId={currentChatId}
-        onSelectChat={(id) => setCurrentChatId(id)}
-        setIsSidebarOpen={setIsSidebarOpen}
-        isSidebarOpen={isSidebarOpen}
-      />
-
-
-      <div className={`flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'ml-64 w-[calc(100%-16rem)]' : 'w-full'}`}>
+      <div className="relative h-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
         {/* The Full-Screen 3D Canvas */}
         <AIEmotionAnalyzer
           avatarState={avatarState}
           message={message}
           onMessagePlayed={() => setMessage(null)}
           isFocusMode={isFocusMode}
+          isSidebarOpen={isSidebarOpen}
         />
 
         <div className={`transition-all duration-300 ${isMinimized
