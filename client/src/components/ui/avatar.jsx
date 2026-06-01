@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ChevronDown, ChevronUp, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
 import FlatUpArrow from '../../assets/icons/flatUpArrow';
 import Loader from '../../assets/icons/loader';
+import Sidebar from './sidebar';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode }) => {
   const mountRef = useRef(null);
@@ -469,6 +470,8 @@ const AvatarDemo = () => {
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', text: "Hi there! I am Zara. How can I help you today?" }
   ]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentChatId, setCurrentChatId] = useState(null);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -487,6 +490,29 @@ const AvatarDemo = () => {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatHistory, openChatPreview]);
+
+  useEffect(() => {
+    if (!currentChatId) return;
+
+    const fetchHistory = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${currentChatId}/messages`);
+
+        if (response.data.length > 0) {
+          const formattedHistory = response.data.map(msg => ({
+            role: msg.role === 'model' ? 'ai' : 'user',
+            text: msg.content
+          }));
+          setChatHistory(formattedHistory);
+        } else {
+          setChatHistory([{ role: 'ai', text: "Hi there! I am Zara. How can I help you today?" }]);
+        }
+      } catch (error) {
+        console.error("Failed to load chat history", error);
+      }
+    };
+    fetchHistory();
+  }, [currentChatId]);
 
   const states = [
     'idle', 'sad_idle', 'talking', 'talking1', 'talking2',
@@ -569,7 +595,7 @@ const AvatarDemo = () => {
     const newState = !isWakeWordActive;
     setIsWakeWordActive(newState);
     if (newState) {
-      try { recognitionRef.current?.start(); } catch(e) {}
+      try { recognitionRef.current?.start(); } catch (e) { }
     } else {
       if (!isRecording) recognitionRef.current?.stop();
     }
@@ -589,6 +615,11 @@ const AvatarDemo = () => {
     const text = typeof textToSend === 'string' ? textToSend : inputTextRef.current;
     if (!text || !text.trim()) return;
 
+    if (!currentChatId) {
+      alert("Please select or create a chat session first.");
+      return;
+    }
+
     setChatHistory(prev => [...prev, { role: 'user', text }]);
 
     setIsLoading(true);
@@ -598,6 +629,7 @@ const AvatarDemo = () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, {
         message: text,
+        chatId: currentChatId
       });
 
       const aiData = response.data;
@@ -634,198 +666,207 @@ const AvatarDemo = () => {
 
 
   return (
-    // ✅ Removed the solid background, added flex to push controls to the bottom
-    <div className="h-[100dvh] w-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
+    <div className="h-[100dvh] w-full flex">
 
-      {/* The Full-Screen 3D Canvas */}
-      <AIEmotionAnalyzer
-        avatarState={avatarState}
-        message={message}
-        onMessagePlayed={() => setMessage(null)}
-        isFocusMode={isFocusMode}
-      />
+      {isSidebarOpen && (
+        <Sidebar
+          currentChatId={currentChatId}
+          onSelectChat={(id) => setCurrentChatId(id)}
+        />
+      )}
 
-      <div className={`transition-all duration-300 ${isMinimized
-        ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
-        : 'w-full max-w-3xl mx-auto mb-4' // Full width when expanded
-        }`}>
+      <div className={`flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'ml-64 w-[calc(100%-16rem)]' : 'w-full'}`}>
+        {/* The Full-Screen 3D Canvas */}
+        <AIEmotionAnalyzer
+          avatarState={avatarState}
+          message={message}
+          onMessagePlayed={() => setMessage(null)}
+          isFocusMode={isFocusMode}
+        />
 
-        {/* Hidden title when minimized to clear up vertical space */}
-        {!isMinimized && !openChatPreview && (
-          <h1 className={`${isFocusMode ? 'text-4xl sm:text-3xl' : 'text-lg sm:text-xl'} font-bold text-center mb-1 sm:mb-2 text-white drop-shadow-md`}>
-            Meet Zara AI
-          </h1>
-        )}
+        <div className={`transition-all duration-300 ${isMinimized
+          ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
+          : 'w-full max-w-3xl mx-auto mb-4' // Full width when expanded
+          }`}>
 
-        {/* Glassmorphic Container */}
-        <div className={`bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300 ${isMinimized ? 'p-2' : 'p-3 sm:p-4'}`}>
+          {/* Hidden title when minimized to clear up vertical space */}
+          {!isMinimized && !openChatPreview && (
+            <h1 className={`${isFocusMode ? 'text-4xl sm:text-3xl' : 'text-lg sm:text-xl'} font-bold text-center mb-1 sm:mb-2 text-white drop-shadow-md`}>
+              Meet Zara AI
+            </h1>
+          )}
 
-          {/* Layout shifts to a compact row when minimized */}
-          <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-2' : 'flex-col'}`}>
+          {/* Glassmorphic Container */}
+          <div className={`bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl pointer-events-auto border border-white/50 transition-all duration-300 ${isMinimized ? 'p-2' : 'p-3 sm:p-4'}`}>
 
-            {openChatPreview && !isMinimized && (
-              <div className="w-full transition-all duration-300 mb-2 border-b border-gray-200/60 pb-4">
-                <div className="flex justify-between items-center mb-3 px-1">
-                  <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
-                  <button
-                    onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
-                    className="text-[12px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
-                    title="Clear Conversation"
-                  >
-                    Clear
-                  </button>
-                </div>
+            {/* Layout shifts to a compact row when minimized */}
+            <div className={`flex ${isMinimized ? 'flex-row items-center justify-between gap-2' : 'flex-col'}`}>
 
-                <div className="space-y-3 overflow-y-auto max-h-[35vh] sm:max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                  {chatHistory.map((chat, index) => (
-                    <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`p-2.5 rounded-2xl max-w-[92%] sm:max-w-[85%] text-sm shadow-sm ${chat.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                        : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
-                        }`}>
-                        {chat.text}
-                      </div>
-                    </div>
-                  ))}
-
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-white/90 border border-gray-200/80 p-3 rounded-2xl rounded-tl-sm flex gap-1.5 items-center shadow-sm">
-                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
-                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-              </div>
-            )}
-
-
-            {!isMinimized && (
-              <div className="flex items-start justify-center text-gray-500">
-                <span className={`inline-flex items-center justify-center origin-center transition-transform duration-300 ${openChatPreview ? 'rotate-180' : ''} text-gray-400 text-sm cursor-pointer`} title="Open Chat Preview" onClick={() => setOpenChatPreview(!openChatPreview)}>
-                  <FlatUpArrow />
-                </span>
-              </div>
-            )}
-
-            {!isMinimized && (
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Chat with Zara</h3>
-
-                <div className="flex items-center gap-4">
-                  
-                  {/* 🚨 NEW: Wake Word Toggle */}
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Wake Word
-                    </span>
+              {openChatPreview && !isMinimized && (
+                <div className="w-full transition-all duration-300 mb-2 border-b border-gray-200/60 pb-4">
+                  <div className="flex justify-between items-center mb-3 px-1">
+                    <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
                     <button
-                      onClick={toggleWakeWord}
-                      className={`relative w-12 h-6 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-0.5 ${isWakeWordActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-100'}`}
-                      title="Say 'Hey Zara' to wake her up"
+                      onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
+                      className="text-[12px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
+                      title="Clear Conversation"
                     >
-                      <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isWakeWordActive ? 'translate-x-6 bg-green-500' : 'translate-x-0 bg-gray-400'}`} />
+                      Clear
                     </button>
                   </div>
 
-                  <div className="w-px h-6 bg-gray-300 hidden sm:block"></div>
+                  <div className="space-y-3 overflow-y-auto max-h-[35vh] sm:max-h-60 pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {chatHistory.map((chat, index) => (
+                      <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`p-2.5 rounded-2xl max-w-[92%] sm:max-w-[85%] text-sm shadow-sm ${chat.role === 'user'
+                          ? 'bg-indigo-600 text-white rounded-tr-sm'
+                          : 'bg-white/90 border border-gray-200/80 text-gray-700 rounded-tl-sm'
+                          }`}>
+                          {chat.text}
+                        </div>
+                      </div>
+                    ))}
 
-                  {/* Focus Toggle */}
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Focus Mode
-                    </span>
-                    <button
-                      onClick={() => setIsFocusMode(!isFocusMode)}
-                      className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode ? 'border-purple-500' : 'border-gray-300'}`}
-                    >
-                      <Target size={17} className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-300 ${isFocusMode ? 'opacity-20 text-gray-800' : 'opacity-100'}`} />
-                      <Eye size={17} className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-300 ${isFocusMode ? 'opacity-100' : 'opacity-20 text-purple-700'}`} />
-                      <div className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'}`} />
-                    </button>
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-white/90 border border-gray-200/80 p-3 rounded-2xl rounded-tl-sm flex gap-1.5 items-center shadow-sm">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
                   </div>
-
-                  <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition">
-                    <Minimize2 size={18} />
-                  </button>
                 </div>
-              </div>
-            )}
-
-            <div className={`flex gap-1.5 sm:gap-2 ${isMinimized ? 'justify-center items-center' : 'w-full mb-4'}`}>
-              <button
-                onClick={toggleRecording}
-                className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'}`}
-              >
-                <Mic size={20} />
-              </button>
-
-              {!isMinimized ? (
-                <>
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder={isWakeWordActive ? "Say 'Hey Zara' or type a message..." : "Type a message or click the mic..."}
-                    className="flex-1 min-w-0 bg-white border border-gray-300 rounded-xl px-3 sm:px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 shadow-sm"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={() => sendMessage()}
-                    disabled={isLoading}
-                    className={`px-3 sm:px-6 py-2 sm:py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 shadow-indigo-600/20 active:scale-[0.98]'}`}
-                  >
-                    {isLoading ? (<><Loader /><span className="hidden sm:inline">Thinking...</span></>) : ('Send')}
-                  </button>
-                </>
-              ) : (
-                <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
-                  {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
-                </span>
               )}
+
+
+              {!isMinimized && (
+                <div className="flex items-start justify-center text-gray-500">
+                  <span className={`inline-flex items-center justify-center origin-center transition-transform duration-300 ${openChatPreview ? 'rotate-180' : ''} text-gray-400 text-sm cursor-pointer`} title="Open Chat Preview" onClick={() => setOpenChatPreview(!openChatPreview)}>
+                    <FlatUpArrow />
+                  </span>
+                </div>
+              )}
+
+              {!isMinimized && (
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Chat with Zara</h3>
+
+                  <div className="flex items-center gap-4">
+
+                    {/* 🚨 NEW: Wake Word Toggle */}
+                    <div className="flex items-center gap-2">
+                      <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Wake Word
+                      </span>
+                      <button
+                        onClick={toggleWakeWord}
+                        className={`relative w-12 h-6 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-0.5 ${isWakeWordActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-100'}`}
+                        title="Say 'Hey Zara' to wake her up"
+                      >
+                        <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isWakeWordActive ? 'translate-x-6 bg-green-500' : 'translate-x-0 bg-gray-400'}`} />
+                      </button>
+                    </div>
+
+                    <div className="w-px h-6 bg-gray-300 hidden sm:block"></div>
+
+                    {/* Focus Toggle */}
+                    <div className="flex items-center gap-2">
+                      <span className="hidden sm:block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Focus Mode
+                      </span>
+                      <button
+                        onClick={() => setIsFocusMode(!isFocusMode)}
+                        className={`relative w-16 h-8 rounded-full border-2 transition-colors duration-300 focus:outline-none flex items-center px-1 ${isFocusMode ? 'border-purple-500' : 'border-gray-300'}`}
+                      >
+                        <Target size={17} className={`absolute left-2 z-10 transition-opacity duration-200 text-gray-300 ${isFocusMode ? 'opacity-20 text-gray-800' : 'opacity-100'}`} />
+                        <Eye size={17} className={`absolute right-2 z-10 transition-opacity duration-200 text-purple-300 ${isFocusMode ? 'opacity-100' : 'opacity-20 text-purple-700'}`} />
+                        <div className={`w-6 h-6 rounded-xl transition-transform duration-300 shadow-md ${isFocusMode ? 'translate-x-7 bg-purple-600' : 'translate-x-0 bg-gray-400'}`} />
+                      </button>
+                    </div>
+
+                    <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100 transition">
+                      <Minimize2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className={`flex gap-1.5 sm:gap-2 ${isMinimized ? 'justify-center items-center' : 'w-full mb-4'}`}>
+                <button
+                  onClick={toggleRecording}
+                  className={`p-3 rounded-xl text-white shadow-md transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800 hover:bg-gray-700'}`}
+                >
+                  <Mic size={20} />
+                </button>
+
+                {!isMinimized ? (
+                  <>
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder={isWakeWordActive ? "Say 'Hey Zara' or type a message..." : "Type a message or click the mic..."}
+                      className="flex-1 min-w-0 bg-white border border-gray-300 rounded-xl px-3 sm:px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 shadow-sm"
+                      disabled={isLoading}
+                    />
+                    <button
+                      onClick={() => sendMessage()}
+                      disabled={isLoading}
+                      className={`px-3 sm:px-6 py-2 sm:py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 shadow-indigo-600/20 active:scale-[0.98]'}`}
+                    >
+                      {isLoading ? (<><Loader /><span className="hidden sm:inline">Thinking...</span></>) : ('Send')}
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-sm font-medium text-gray-700 animate-fade-in hidden sm:inline">
+                    {isRecording ? 'Zara is listening...' : 'Talk to Zara'}
+                  </span>
+                )}
+              </div>
+
+              {isMinimized && (
+                <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm">
+                  <Maximize2 size={18} />
+                </button>
+              )}
+
             </div>
 
-            {isMinimized && (
-              <button onClick={() => setIsMinimized(!isMinimized)} className="text-gray-500 hover:text-gray-800 p-2 rounded-xl hover:bg-gray-100 transition border border-gray-200 bg-white shadow-sm">
-                <Maximize2 size={18} />
-              </button>
+            {/* Manual State Override Hidden cleanly when Minimized */}
+            {!isMinimized && (
+              <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
+                <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
+                  <span>Manual State Override</span>
+                  <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">
+                    <ChevronDown size={16} strokeWidth={3} />
+                  </span>
+                </summary>
+
+                <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
+                  {states.map(state => (
+                    <button
+                      key={state}
+                      onClick={() => setAvatarState(state)}
+                      className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${avatarState === state
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                    >
+                      {formatLabel(state)}
+                    </button>
+                  ))}
+                </div>
+              </details>
             )}
 
           </div>
-
-          {/* Manual State Override Hidden cleanly when Minimized */}
-          {!isMinimized && (
-            <details className="group border border-gray-200 rounded-xl p-2 bg-gray-50/50">
-              <summary className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer list-none select-none">
-                <span>Manual State Override</span>
-                <span className="transition-transform group-open:rotate-180 text-gray-400 text-sm">
-                  <ChevronDown size={16} strokeWidth={3} />
-                </span>
-              </summary>
-
-              <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto pt-1">
-                {states.map(state => (
-                  <button
-                    key={state}
-                    onClick={() => setAvatarState(state)}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${avatarState === state
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                      }`}
-                  >
-                    {formatLabel(state)}
-                  </button>
-                ))}
-              </div>
-            </details>
-          )}
-
         </div>
       </div>
+
     </div>
   );
 };
