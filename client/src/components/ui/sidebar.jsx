@@ -100,7 +100,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
             {isSidebarOpen ? (
                 <div className="w-64 h-full bg-white/60 backdrop-blur-md border-r border-white/60 shadow-xl text-gray-800 p-4 flex flex-col fixed left-0 top-0 z-50 transition-all duration-300">
 
-                    <div className="flex items-center justify-between gap-2.5 px-2 mb-4 select-none">
+                    <div className="flex items-center justify-between gap-2.5 px-2 mb-2 select-none">
                         <div className="flex items-center gap-2">
                             <Sparkle className="text-indigo-500" size={24} strokeWidth={2.5} />
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">
@@ -114,20 +114,20 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
 
                     <button
                         onClick={createNewChat}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl mb-6 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl mb-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
                     >
                         <Plus size={18} />
                         New Chat
                     </button>
 
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                        <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3 px-1">Recent Chats</h3>
+                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                        <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Recent Chats</h3>
 
                         {chats.map(chat => (
                             <div
                                 key={chat.id}
                                 onClick={() => onSelectChat(chat.id)}
-                                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border ${currentChatId === chat.id
+                                className={`group flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 border ${currentChatId === chat.id
                                     ? 'bg-white/90 border-gray-200/80 shadow-sm text-indigo-700 font-medium'
                                     : 'border-transparent hover:bg-white/50 hover:border-gray-200/50 text-gray-700'
                                     }`}
