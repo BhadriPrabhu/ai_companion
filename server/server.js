@@ -67,12 +67,36 @@ const responseSchema = {
 const isWin = process.platform === "win32";
 const RHUBARB_PATH = isWin ? 'bin/rhubarb.exe' : './bin/rhubarb';
 
+
+const CURRENT_USER_ID = '11111111-1111-1111-1111-111111111111';
+
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;
-        if (!userMessage) return res.status(400).json({ error: "Message is required" });
+        const chatId = req.body.chatId;
 
-        console.log(`User said: "${userMessage}"`);
+        if (!userMessage) return res.status(400).json({ error: "Message is required" });
+        if (!chatId) return res.status(400).json({ error: "chatId is required" });
+
+        console.log(`User said: "${userMessage}" in chat: ${chatId}`);
+
+        // 1. Save User Message to DB
+        await pool.query(
+            'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
+            [chatId, 'user', userMessage]
+        );
+
+        // 2. Fetch Chat History from DB for Context
+        const historyResult = await pool.query(
+            'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
+            [chatId]
+        );
+        
+        // Format history for the Gemini API
+        const formattedHistory = historyResult.rows.map(msg => ({
+            role: msg.role === 'model' ? 'model' : 'user', // Gemini expects 'model' or 'user'
+            parts: [{ text: msg.content }]
+        }));
 
         // 1. Get the Brain's response (Gemini)
         const aiResponse = await ai.models.generateContent({
@@ -89,14 +113,26 @@ app.post('/api/chat', async (req, res) => {
         const aiData = JSON.parse(aiResponse.text);
         console.log("Gemini decided:", aiData);
 
+        // 4. Save AI Response to DB
+        await pool.query(
+            'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
+            [chatId, 'model', aiData.replyText]
+        );
+
+        // Update the chat's updated_at timestamp so it jumps to the top of the sidebar
+        await pool.query(
+            'UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            [chatId]
+        );
+
         // 2. Get the Voice (Microsoft Edge Neural TTS - 100% FREE)
         console.log("Generating audio with Edge Neural TTS...");
-        
+
         // 'en-US-AriaNeural' is a fantastic, highly realistic female voice.
         // Other options: 'en-US-GuyNeural' (Male), 'en-US-JennyNeural' (Female)
         const tts = new EdgeTTS(aiData.replyText, 'en-US-AriaNeural');
         const result = await tts.synthesize();
-        
+
         // The package returns an ArrayBuffer. We convert it to Base64 for React.
         const audioBuffer = Buffer.from(await result.audio.arrayBuffer());
         const audioBase64 = audioBuffer.toString('base64');
@@ -156,6 +192,47 @@ app.post('/api/chat', async (req, res) => {
         }
 
         res.status(500).json({ error: "Failed to process request" });
+    }
+});
+
+
+// 1. Get all chats for the sidebar
+app.get('/api/chats', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM chats WHERE user_id = $1 ORDER BY updated_at DESC',
+            [CURRENT_USER_ID]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. Create a new chat session
+app.post('/api/chats', async (req, res) => {
+    try {
+        const title = req.body.title || "New Chat";
+        const result = await pool.query(
+            'INSERT INTO chats (user_id, title) VALUES ($1, $2) RETURNING *',
+            [CURRENT_USER_ID, title]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. Get messages for a specific chat
+app.get('/api/chats/:chatId/messages', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
+            [req.params.chatId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
