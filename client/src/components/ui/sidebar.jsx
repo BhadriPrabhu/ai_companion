@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User } from 'lucide-react';
 import AlertModal from './alertModal';
 
-const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen }) => {
+const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser }) => {
     const [chats, setChats] = useState([]);
 
     // State for editing
@@ -11,10 +11,19 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
     const [editTitle, setEditTitle] = useState("");
     const [isClearModalOpen, setIsClearModalOpen] = useState(false);
     const [chatIdToDelete, setChatIdToDelete] = useState(null);
+
+    const [loginEmail, setLoginEmail] = useState('');
+    const [authLoading, setAuthLoading] = useState(false);
+    
     const inputRef = useRef(null);
 
     useEffect(() => {
         const fetchChats = async () => {
+            if(!currentChatId) {
+                setChats([]);
+                return;
+            }
+
             try {
                 const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`);
                 setChats(response.data);
@@ -37,9 +46,11 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
     }, [editingChatId]);
 
     const createNewChat = async () => {
+        if (!currentChatId) return;
         try {
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`, {
-                title: "New Conversation"
+                title: "New Conversation",
+                userId: currentUser.id,
             });
             setChats([response.data, ...chats]);
             onSelectChat(response.data.id);
@@ -81,7 +92,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
 
     const handleDelete = async (chatId) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}`);
+            await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}?userId=${currentUser.id}`);
 
             const updatedChats = chats.filter(chat => chat.id !== chatId);
             setChats(updatedChats);
@@ -92,6 +103,35 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
         } catch (error) {
             console.error("Error deleting chat:", error);
         }
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        if (!loginEmail.trim()) return;
+        
+        setAuthLoading(true);
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
+                email: loginEmail.trim()
+            });
+            
+            const user = response.data;
+            setCurrentUser(user);
+            localStorage.setItem('zara_user', JSON.stringify(user));
+            setLoginEmail('');
+        } catch (error) {
+            console.error("Login error:", error);
+            alert("Failed to login. Please try again.");
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+        localStorage.removeItem('zara_user');
+        setChats([]);
+        onSelectChat(null);
     };
 
     return (
@@ -187,6 +227,53 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen 
                                 <p className="text-xs text-gray-400 italic text-center mt-6">No recent chats.</p>
                             )}
                         </div>
+                        {/* --- NEW: Auth UI Section --- */}
+                        <div className="pt-4 border-t border-gray-200/60 mt-auto">
+                            {currentUser ? (
+                                <div className="flex items-center justify-between bg-white/50 p-2 rounded-xl border border-gray-200/50">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-full flex-shrink-0">
+                                            <User size={16} />
+                                        </div>
+                                        <span className="text-xs text-gray-600 font-medium truncate" title={currentUser.email}>
+                                            {currentUser.email.split('@')[0]}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={handleLogout}
+                                        className="text-gray-400 hover:text-red-500 transition-colors p-1.5"
+                                        title="Log Out"
+                                    >
+                                        <LogOut size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleLogin} className="flex flex-col gap-2">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Save your history</label>
+                                    <input 
+                                        type="email" 
+                                        required
+                                        placeholder="Enter your email..." 
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        className="w-full bg-white text-sm text-gray-800 px-3 py-2 rounded-xl outline-none border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        disabled={authLoading}
+                                        className="w-full bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-sm"
+                                    >
+                                        {authLoading ? "Logging in..." : (
+                                            <>
+                                                <LogIn size={16} />
+                                                Log In / Sign Up
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+
                         
                     </div>
                     <AlertModal
