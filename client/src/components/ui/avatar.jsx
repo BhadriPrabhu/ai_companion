@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Eye, Maximize2, Mic, Minimize2, Target } from '
 import FlatUpArrow from '../../assets/icons/flatUpArrow';
 import Loader from '../../assets/icons/loader';
 import Sidebar from './sidebar';
+import AlertModal from './alertModal';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode, isSidebarOpen }) => {
   const mountRef = useRef(null);
@@ -443,14 +444,14 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
       setError('Failed to initialize 3D environment');
     }
 
-return () => {
+    return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-      
+
       if (resizeObserver) {
-        resizeObserver.disconnect(); 
+        resizeObserver.disconnect();
       }
-      
+
       if (rendererRef.current?.domElement && mount.contains(rendererRef.current.domElement)) {
         mount.removeChild(rendererRef.current.domElement);
       }
@@ -483,6 +484,7 @@ const AvatarDemo = () => {
   ]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentChatId, setCurrentChatId] = useState(null);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -698,7 +700,17 @@ const AvatarDemo = () => {
           isFocusMode={isFocusMode}
           isSidebarOpen={isSidebarOpen}
         />
-
+        <AlertModal
+          isOpen={isClearModalOpen}
+          onClose={() => setIsClearModalOpen(false)}
+          onConfirm={() => {
+            setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }]);
+          }}
+          title="Clear Conversation"
+          message="Are you sure you want to clear the conversation history? This action cannot be undone."
+          confirmText="Clear"
+          type='delete'
+        />
         <div className={`transition-all duration-300 ${isMinimized
           ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
           : 'w-full max-w-3xl mx-auto mb-4' // Full width when expanded
@@ -722,7 +734,11 @@ const AvatarDemo = () => {
                   <div className="flex justify-between items-center mb-3 px-1">
                     <span className="font-semibold text-gray-700 text-sm tracking-wide">Conversation</span>
                     <button
-                      onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
+                      // onClick={() => setChatHistory([{ role: 'ai', text: "Conversation cleared. How can I help?" }])}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsClearModalOpen(true)
+                      }}
                       className="text-[12px] text-gray-400 hover:text-red-500 uppercase tracking-wider font-semibold transition-colors"
                       title="Clear Conversation"
                     >
@@ -755,6 +771,7 @@ const AvatarDemo = () => {
                   </div>
                 </div>
               )}
+
 
 
               {!isMinimized && (
