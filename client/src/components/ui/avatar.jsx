@@ -485,6 +485,7 @@ const AvatarDemo = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -629,7 +630,8 @@ const AvatarDemo = () => {
     if (!text || !text.trim()) return;
 
     if (!currentChatId) {
-      alert("Please select or create a chat session first.");
+      // alert("Please select or create a chat session first.");
+      setIsSessionModalOpen(true);
       return;
     }
 
@@ -710,6 +712,16 @@ const AvatarDemo = () => {
           message="Are you sure you want to clear the conversation history? This action cannot be undone."
           confirmText="Clear"
           type='delete'
+        />
+        <AlertModal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        onConfirm={() => setIsSessionModalOpen(false)}
+        message="Please select or create a chat session first."
+        title="No Chat Session"
+        type='warning'
+        noCancelText={true}
+        confirmText='OK'
         />
         <div className={`transition-all duration-300 ${isMinimized
           ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
