@@ -487,6 +487,14 @@ const AvatarDemo = () => {
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isBrowserModalOpen, setIsBrowserModalOpen] = useState(false);
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('zara_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const isGuest = !currentUser;
+
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -634,7 +642,7 @@ const AvatarDemo = () => {
     const text = typeof textToSend === 'string' ? textToSend : inputTextRef.current;
     if (!text || !text.trim()) return;
 
-    if (!currentChatId) {
+    if (!isGuest && !currentChatId) {
       // alert("Please select or create a chat session first.");
       setIsSessionModalOpen(true);
       setInputText('');
@@ -648,10 +656,11 @@ const AvatarDemo = () => {
     setMessage(null); // Reset avatar to idle while waiting
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, {
-        message: text,
-        chatId: currentChatId
-      });
+      const payload = isGuest
+        ? { message: text, isGuest: true, history: chatHistory } // Pass local history
+        : { message: text, isGuest: false, chatId: currentChatId, userId: currentUser.id }; // Pass DB IDs
+
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, payload);
 
       const aiData = response.data;
 
@@ -695,6 +704,8 @@ const AvatarDemo = () => {
           onSelectChat={(id) => setCurrentChatId(id)}
           setIsSidebarOpen={setIsSidebarOpen}
           isSidebarOpen={isSidebarOpen}
+          currentUser={currentUser}
+          setCurrentUser={setCurrentUser}
         />
       </div>
 
