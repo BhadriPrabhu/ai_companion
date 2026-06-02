@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Sparkle, ArrowRight, Loader2 } from 'lucide-react';
 
-const Login = ({ setCurrentUser, onNavigateBack }) => {
+const Login = ({ setCurrentUser, onNavigateBack, onNavigateToRegister }) => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -51,7 +51,9 @@ const Login = ({ setCurrentUser, onNavigateBack }) => {
                 </div> */}
 
                 <div className="text-center mb-2">
-                    <h1 className="text-3xl font-bold text-gray-800 tracking-tight mb-2 drop-shadow-sm">Welcome to <br /><span className="font-bold text-3xl bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">Zara AI</span></h1>
+                    <h1 className="text-3xl font-bold text-gray-800 tracking-tight mb-2 drop-shadow-sm">Login
+                        {/* <br /><span className="font-bold text-3xl bg-gradient-to-r from-blue-600 via-purple-500 to-orange-400 text-transparent bg-clip-text tracking-tight">Zara AI</span> */}
+                    </h1>
                     <p className="text-gray-500 text-sm font-medium">Enter your email to save your chat history and preferences.</p>
                 </div>
 
@@ -101,7 +103,16 @@ const Login = ({ setCurrentUser, onNavigateBack }) => {
                     <p className="text-center text-gray-500 text-sm mt-2">Or</p>
                 </div>
 
-                <div className="text-center mt-2">
+                <div className="text-center mt-2 flex flex-col gap-2">
+                    {onNavigateToRegister && (
+                        <button
+                            type="button"
+                            onClick={onNavigateToRegister}
+                            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                        >
+                            Don't have an account? Register
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onNavigateBack}

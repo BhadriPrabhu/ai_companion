@@ -8,6 +8,7 @@ import Loader from '../../assets/icons/loader';
 import Sidebar from './sidebar';
 import AlertModal from './alertModal';
 import Login from './login';
+import Register from './register';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode, isSidebarOpen }) => {
   const mountRef = useRef(null);
@@ -495,6 +496,7 @@ const AvatarDemo = () => {
   });
 
   const [showLoginPage, setShowLoginPage] = useState(false);
+  const [showRegisterPage, setShowRegisterPage] = useState(false);
 
   const isGuest = !currentUser;
 
@@ -710,6 +712,7 @@ const AvatarDemo = () => {
           currentUser={currentUser}
           setCurrentUser={setCurrentUser}
           onNavigateToLogin={() => setShowLoginPage(true)}
+          onNavigateToRegister={() => setShowRegisterPage(true)}
         />
       </div>
 
@@ -946,6 +949,20 @@ const AvatarDemo = () => {
         <Login
           setCurrentUser={setCurrentUser}
           onNavigateBack={() => setShowLoginPage(false)}
+          onNavigateToRegister={() => {
+            setShowLoginPage(false);
+            setShowRegisterPage(true);
+          }}
+        />
+      )}
+      {showRegisterPage && (
+        <Register
+          setCurrentUser={setCurrentUser}
+          onNavigateBack={() => setShowRegisterPage(false)}
+          onNavigateToLogin={() => {
+            setShowRegisterPage(false);
+            setShowLoginPage(true);
+          }}
         />
       )}
 
