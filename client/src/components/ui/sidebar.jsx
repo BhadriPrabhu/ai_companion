@@ -138,7 +138,9 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
                         <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                             <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Recent Chats</h3>
-
+                            {!currentUser && (
+                                <p className="text-gray-500 text-xs px-1">Please log in to view your chats.</p>
+                            )}
                             {chats.map(chat => (
                                 <div
                                     key={chat.id}
