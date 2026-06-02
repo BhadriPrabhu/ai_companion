@@ -68,7 +68,7 @@ const isWin = process.platform === "win32";
 const RHUBARB_PATH = isWin ? 'bin/rhubarb.exe' : './bin/rhubarb';
 
 
-const CURRENT_USER_ID = '11111111-1111-1111-1111-111111111111';
+// const CURRENT_USER_ID = '11111111-1111-1111-1111-111111111111';
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -77,7 +77,7 @@ app.post('/api/auth/login', async (req, res) => {
 
         // Check if user exists
         let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        
+
         // If not, create them
         if (result.rows.length === 0) {
             result = await pool.query(
@@ -85,7 +85,7 @@ app.post('/api/auth/login', async (req, res) => {
                 [email]
             );
         }
-        
+
         res.json(result.rows[0]); // Returns the user object with the UUID
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -94,36 +94,44 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/chat', async (req, res) => {
     try {
-        const userMessage = req.body.message;
-        const chatId = req.body.chatId;
+        const { message, chatId, userId, isGuest, history } = req.body;
 
-        if (!userMessage) return res.status(400).json({ error: "Message is required" });
-        if (!chatId) return res.status(400).json({ error: "chatId is required" });
+        if (!message) return res.status(400).json({ error: "Message is required" });
+        // if (!chatId) return res.status(400).json({ error: "chatId is required" });
 
-        console.log(`User said: "${userMessage}" in chat: ${chatId}`);
+        console.log(`User said: "${message}" in chat: ${chatId}`);
 
-        // 1. Save User Message to DB
-        await pool.query(
-            'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
-            [chatId, 'user', userMessage]
-        );
+        let formattedHistory = [];
 
-        // 2. Fetch Chat History from DB for Context
-        const historyResult = await pool.query(
-            'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
-            [chatId]
-        );
-        
-        // Format history for the Gemini API
-        const formattedHistory = historyResult.rows.map(msg => ({
-            role: msg.role === 'model' ? 'model' : 'user', // Gemini expects 'model' or 'user'
-            parts: [{ text: msg.content }]
-        }));
+        if (!isGuest && chatId && userId) {
+            // 1. Save User Message to DB
+            await pool.query(
+                'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
+                [chatId, 'user', message]
+            );
+
+            // 2. Fetch Chat History from DB
+            const historyResult = await pool.query(
+                'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
+                [chatId]
+            );
+
+            formattedHistory = historyResult.rows.map(msg => ({
+                role: msg.role === 'model' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+        } else {
+            // GUEST MODE: Use the history passed from the frontend React state
+            formattedHistory = history ? history.map(msg => ({
+                role: msg.role === 'ai' ? 'model' : 'user',
+                parts: [{ text: msg.text }]
+            })) : [];
+        }
 
         // 1. Get the Brain's response (Gemini)
         const aiResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: userMessage,
+            contents: [...formattedHistory, { role: 'user', parts: [{ text: message }] }],
             config: {
                 systemInstruction: systemInstruction,
                 responseMimeType: "application/json",
@@ -136,16 +144,16 @@ app.post('/api/chat', async (req, res) => {
         console.log("Gemini decided:", aiData);
 
         // 4. Save AI Response to DB
-        await pool.query(
-            'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
-            [chatId, 'model', aiData.replyText]
-        );
-
-        // Update the chat's updated_at timestamp so it jumps to the top of the sidebar
-        await pool.query(
-            'UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
-            [chatId]
-        );
+        if (!isGuest && chatId && userId) {
+            await pool.query(
+                'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
+                [chatId, 'model', aiData.replyText]
+            );
+            await pool.query(
+                'UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+                [chatId]
+            );
+        }
 
         // 2. Get the Voice (Microsoft Edge Neural TTS - 100% FREE)
         console.log("Generating audio with Edge Neural TTS...");
@@ -221,9 +229,11 @@ app.post('/api/chat', async (req, res) => {
 // 1. Get all chats for the sidebar
 app.get('/api/chats', async (req, res) => {
     try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: "User ID is required" });
         const result = await pool.query(
             'SELECT * FROM chats WHERE user_id = $1 ORDER BY updated_at DESC',
-            [CURRENT_USER_ID]
+            [userId]
         );
         res.json(result.rows);
     } catch (err) {
@@ -234,10 +244,11 @@ app.get('/api/chats', async (req, res) => {
 // 2. Create a new chat session
 app.post('/api/chats', async (req, res) => {
     try {
-        const title = req.body.title || "New Chat";
+        const { title, userId } = req.body;
+        const charTitle = title || "New Chat";
         const result = await pool.query(
             'INSERT INTO chats (user_id, title) VALUES ($1, $2) RETURNING *',
-            [CURRENT_USER_ID, title]
+            [userId, charTitle]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -261,14 +272,15 @@ app.get('/api/chats/:chatId/messages', async (req, res) => {
 // 4. Update chat title
 app.put('/api/chats/:chatId', async (req, res) => {
     try {
-        const { title } = req.body;
+        const { title, userId } = req.body;
         if (!title) return res.status(400).json({ error: "Title is required" });
+        if (!userId) return res.status(400).json({ error: "User ID is required" });
 
         const result = await pool.query(
             'UPDATE chats SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
-            [title, req.params.chatId, CURRENT_USER_ID]
+            [title, req.params.chatId, userId]
         );
-        
+
         if (result.rows.length === 0) return res.status(404).json({ error: "Chat not found" });
         res.json(result.rows[0]);
     } catch (err) {
@@ -279,9 +291,12 @@ app.put('/api/chats/:chatId', async (req, res) => {
 // 5. Delete a chat
 app.delete('/api/chats/:chatId', async (req, res) => {
     try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: "User ID is required" });
+
         const result = await pool.query(
             'DELETE FROM chats WHERE id = $1 AND user_id = $2 RETURNING *',
-            [req.params.chatId, CURRENT_USER_ID]
+            [req.params.chatId, userId]
         );
 
         if (result.rows.length === 0) return res.status(404).json({ error: "Chat not found" });
