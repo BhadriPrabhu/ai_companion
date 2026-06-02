@@ -677,9 +677,9 @@ const AvatarDemo = () => {
 
 
   return (
-    <div className={`h-[100dvh] w-full grid transition-all duration-300 ${isSidebarOpen ? 'grid-cols-[16rem_1fr]' : 'grid-cols-[0px_1fr]'}`}>
+    <div className={`h-[100dvh] w-full flex md:grid transition-all duration-300 ${isSidebarOpen ? 'md:grid-cols-[16rem_1fr]' : 'md:grid-cols-[0px_1fr]'}`}>
 
-      <div className="relative h-full z-50 overflow-hidden">
+      <div className="absolute md:relative h-full z-50 overflow-hidden">
         <Sidebar
           currentChatId={currentChatId}
           onSelectChat={(id) => setCurrentChatId(id)}
@@ -689,7 +689,7 @@ const AvatarDemo = () => {
       </div>
 
 
-      <div className="relative h-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
+      <div className="relative h-full flex-1 w-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
         {/* The Full-Screen 3D Canvas */}
         <AIEmotionAnalyzer
           avatarState={avatarState}
