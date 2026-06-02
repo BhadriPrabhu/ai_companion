@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User } from 'lucide-react';
 import AlertModal from './alertModal';
 
-const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser }) => {
+const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser, onNavigateToLogin }) => {
     const [chats, setChats] = useState([]);
 
     // State for editing
@@ -11,9 +11,6 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const [editTitle, setEditTitle] = useState("");
     const [isClearModalOpen, setIsClearModalOpen] = useState(false);
     const [chatIdToDelete, setChatIdToDelete] = useState(null);
-
-    const [loginEmail, setLoginEmail] = useState('');
-    const [authLoading, setAuthLoading] = useState(false);
 
     const inputRef = useRef(null);
 
@@ -38,7 +35,6 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
         fetchChats();
     }, [currentChatId, onSelectChat, currentUser]);
 
-    // Focus input automatically when editing starts
     useEffect(() => {
         if (editingChatId && inputRef.current) {
             inputRef.current.focus();
@@ -105,28 +101,6 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
         }
     };
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        if (!loginEmail.trim()) return;
-
-        setAuthLoading(true);
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
-                email: loginEmail.trim()
-            });
-
-            const user = response.data;
-            setCurrentUser(user);
-            localStorage.setItem('zara_user', JSON.stringify(user));
-            setLoginEmail('');
-        } catch (error) {
-            console.error("Login error:", error);
-            alert("Failed to login. Please try again.");
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
     const handleLogout = () => {
         setCurrentUser(null);
         localStorage.removeItem('zara_user');
@@ -152,22 +126,18 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                             </div>
                         </div>
 
-                        <button
-                            onClick={createNewChat}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl mb-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
-                        >
-                            <Plus size={18} />
-                            New Chat
-                        </button>
+                        {currentUser && (
+                            <button
+                                onClick={createNewChat}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl mb-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all border border-indigo-700"
+                            >
+                                <Plus size={18} />
+                                New Chat
+                            </button>
+                        )}
 
                         <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                             <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Recent Chats</h3>
-
-                            {!currentUser && (
-                                <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs p-3 rounded-xl mb-4 shadow-sm">
-                                    You are currently in <strong>Guest Mode</strong>. Your chats will disappear when you refresh. Log in below to save your history!
-                                </div>
-                            )}
 
                             {chats.map(chat => (
                                 <div
@@ -179,7 +149,6 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                         }`}
                                 >
                                     {editingChatId === chat.id ? (
-                                        // Edit Mode UI
                                         <div className="flex items-center w-full gap-2">
                                             <input
                                                 ref={inputRef}
@@ -198,42 +167,26 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                             </button>
                                         </div>
                                     ) : (
-                                        // Normal View Mode UI
                                         <>
                                             <p className="text-sm truncate flex-1 pr-2">{chat.title}</p>
-
-                                            {/* Action buttons appear on group hover */}
                                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => handleEditStart(e, chat)}
-                                                    className="text-gray-400 hover:text-indigo-600 transition-colors"
-                                                    title="Edit Title"
-                                                >
+                                                <button onClick={(e) => handleEditStart(e, chat)} className="text-gray-400 hover:text-indigo-600 transition-colors" title="Edit Title">
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setIsClearModalOpen(true)
-                                                        setChatIdToDelete(chat.id);
-                                                    }}
-                                                    className="text-gray-400 hover:text-red-500 transition-colors"
-                                                    title="Delete Chat"
-                                                >
+                                                <button onClick={(e) => { e.stopPropagation(); setIsClearModalOpen(true); setChatIdToDelete(chat.id); }} className="text-gray-400 hover:text-red-500 transition-colors" title="Delete Chat">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
-
                                         </>
                                     )}
                                 </div>
                             ))}
 
-                            {chats.length === 0 && (
+                            {currentUser && chats.length === 0 && (
                                 <p className="text-xs text-gray-400 italic text-center mt-6">No recent chats.</p>
                             )}
                         </div>
-                        {/* --- NEW: Auth UI Section --- */}
+                        
                         <div className="pt-4 border-t border-gray-200/60 mt-auto">
                             {currentUser ? (
                                 <div className="flex items-center justify-between bg-white/50 p-2 rounded-xl border border-gray-200/50">
@@ -254,32 +207,20 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                     </button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleLogin} className="flex flex-col gap-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Save your history</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        placeholder="Enter your email..."
-                                        value={loginEmail}
-                                        onChange={(e) => setLoginEmail(e.target.value)}
-                                        className="w-full bg-white text-sm text-gray-800 px-3 py-2 rounded-xl outline-none border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
-                                    />
+                                <div className="flex flex-col gap-3">
+                                    <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs p-3 rounded-xl shadow-sm">
+                                        <strong>Guest Mode</strong><br/>Chats will disappear on refresh.
+                                    </div>
                                     <button
-                                        type="submit"
-                                        disabled={authLoading}
-                                        className="w-full bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-sm"
+                                        onClick={onNavigateToLogin}
+                                        className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-sm"
                                     >
-                                        {authLoading ? "Logging in..." : (
-                                            <>
-                                                <LogIn size={16} />
-                                                Log In / Sign Up
-                                            </>
-                                        )}
+                                        <LogIn size={16} />
+                                        Log In to Save Chats
                                     </button>
-                                </form>
+                                </div>
                             )}
                         </div>
-
 
                     </div>
                     <AlertModal
@@ -305,7 +246,6 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                 </div>
             )}
         </>
-
     );
 };
 

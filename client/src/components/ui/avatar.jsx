@@ -7,6 +7,7 @@ import FlatUpArrow from '../../assets/icons/flatUpArrow';
 import Loader from '../../assets/icons/loader';
 import Sidebar from './sidebar';
 import AlertModal from './alertModal';
+import Login from './login';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode, isSidebarOpen }) => {
   const mountRef = useRef(null);
@@ -493,6 +494,8 @@ const AvatarDemo = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [showLoginPage, setShowLoginPage] = useState(false);
+
   const isGuest = !currentUser;
 
   const chatEndRef = useRef(null);
@@ -706,6 +709,7 @@ const AvatarDemo = () => {
           isSidebarOpen={isSidebarOpen}
           currentUser={currentUser}
           setCurrentUser={setCurrentUser}
+          onNavigateToLogin={() => setShowLoginPage(true)}
         />
       </div>
 
@@ -937,6 +941,13 @@ const AvatarDemo = () => {
           </div>
         </div>
       </div>
+
+      {showLoginPage && (
+        <Login
+          setCurrentUser={setCurrentUser}
+          onNavigateBack={() => setShowLoginPage(false)}
+        />
+      )}
 
     </div>
   );
