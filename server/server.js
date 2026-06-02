@@ -70,6 +70,28 @@ const RHUBARB_PATH = isWin ? 'bin/rhubarb.exe' : './bin/rhubarb';
 
 const CURRENT_USER_ID = '11111111-1111-1111-1111-111111111111';
 
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email is required" });
+
+        // Check if user exists
+        let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        
+        // If not, create them
+        if (result.rows.length === 0) {
+            result = await pool.query(
+                'INSERT INTO users (email) VALUES ($1) RETURNING *',
+                [email]
+            );
+        }
+        
+        res.json(result.rows[0]); // Returns the user object with the UUID
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;
