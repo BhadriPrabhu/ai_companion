@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import AlertModal from './alertModal';
 
-const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser, onNavigateToLogin }) => {
+const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser, onNavigateToLogin, onNavigateToRegister }) => {
     const [chats, setChats] = useState([]);
 
     // State for editing
@@ -186,7 +186,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                 <p className="text-xs text-gray-400 italic text-center mt-6">No recent chats.</p>
                             )}
                         </div>
-                        
+
                         <div className="pt-4 border-t border-gray-200/60 mt-auto">
                             {currentUser ? (
                                 <div className="flex items-center justify-between bg-white/50 p-2 rounded-xl border border-gray-200/50">
@@ -207,16 +207,27 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-3">
-                                    <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs p-3 rounded-xl shadow-sm">
-                                        <strong>Guest Mode</strong><br/>Chats will disappear on refresh.
+                                <div className="flex flex-col gap-2.5">
+                                    <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs p-3 rounded-xl shadow-sm mb-1">
+                                        <strong>Guest Mode</strong><br />Chats will disappear on refresh.
                                     </div>
+
+                                    {/* Primary Action: Log In */}
                                     <button
                                         onClick={onNavigateToLogin}
                                         className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-sm"
                                     >
                                         <LogIn size={16} />
-                                        Log In to Save Chats
+                                        Log In
+                                    </button>
+
+                                    {/* Secondary Action: Sign Up */}
+                                    <button
+                                        onClick={onNavigateToRegister}
+                                        className="w-full bg-white/40 hover:bg-white/80 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 transition-all text-sm shadow-sm"
+                                    >
+                                        <UserPlus size={16} />
+                                        Sign Up
                                     </button>
                                 </div>
                             )}
