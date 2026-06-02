@@ -632,6 +632,7 @@ const AvatarDemo = () => {
     if (!currentChatId) {
       // alert("Please select or create a chat session first.");
       setIsSessionModalOpen(true);
+      setInputText('');
       return;
     }
 
