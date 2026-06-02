@@ -860,8 +860,8 @@ const AvatarDemo = () => {
                     />
                     <button
                       onClick={() => sendMessage()}
-                      disabled={isLoading}
-                      className={`px-3 sm:px-6 py-2 sm:py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 shadow-indigo-600/20 active:scale-[0.98]'}`}
+                      disabled={isLoading || !inputText.trim()}
+                      className={`px-3 sm:px-6 py-2 sm:py-2.5 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-200 ${isLoading ? 'bg-indigo-400 cursor-not-allowed' : inputText.trim() ? 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 shadow-indigo-600/20 active:scale-[0.98]' : 'bg-gray-500 cursor-not-allowed'}`}
                     >
                       {isLoading ? (<><Loader /><span className="hidden sm:inline">Thinking...</span></>) : ('Send')}
                     </button>
