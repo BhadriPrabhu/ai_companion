@@ -92,6 +92,28 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { name, email } = req.body;
+        if (!name || !email) return res.status(400).json({ error: "Name and Email are required" });
+
+        let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+        if (result.rows.length > 0) {
+            return res.status(400).json({ error: "User already exists" });
+        }
+
+        result = await pool.query(
+            'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
+            [name, email]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, chatId, userId, isGuest, history } = req.body;
