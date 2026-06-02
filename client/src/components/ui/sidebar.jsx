@@ -14,18 +14,18 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
     const [loginEmail, setLoginEmail] = useState('');
     const [authLoading, setAuthLoading] = useState(false);
-    
+
     const inputRef = useRef(null);
 
     useEffect(() => {
         const fetchChats = async () => {
-            if(!currentChatId) {
+            if (!currentUser) {
                 setChats([]);
                 return;
             }
 
             try {
-                const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`);
+                const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats?userId=${currentUser.id}`);
                 setChats(response.data);
 
                 if (response.data.length > 0 && !currentChatId) {
@@ -36,7 +36,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
             }
         };
         fetchChats();
-    }, [currentChatId, onSelectChat]);
+    }, [currentChatId, onSelectChat, currentUser]);
 
     // Focus input automatically when editing starts
     useEffect(() => {
@@ -46,7 +46,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     }, [editingChatId]);
 
     const createNewChat = async () => {
-        if (!currentChatId) return;
+        if (!currentUser) return;
         try {
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`, {
                 title: "New Conversation",
@@ -108,13 +108,13 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const handleLogin = async (e) => {
         e.preventDefault();
         if (!loginEmail.trim()) return;
-        
+
         setAuthLoading(true);
         try {
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
                 email: loginEmail.trim()
             });
-            
+
             const user = response.data;
             setCurrentUser(user);
             localStorage.setItem('zara_user', JSON.stringify(user));
@@ -162,6 +162,12 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
                         <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                             <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Recent Chats</h3>
+
+                            {!currentUser && (
+                                <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs p-3 rounded-xl mb-4 shadow-sm">
+                                    You are currently in <strong>Guest Mode</strong>. Your chats will disappear when you refresh. Log in below to save your history!
+                                </div>
+                            )}
 
                             {chats.map(chat => (
                                 <div
@@ -239,7 +245,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                             {currentUser.email.split('@')[0]}
                                         </span>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={handleLogout}
                                         className="text-gray-400 hover:text-red-500 transition-colors p-1.5"
                                         title="Log Out"
@@ -250,16 +256,16 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                             ) : (
                                 <form onSubmit={handleLogin} className="flex flex-col gap-2">
                                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Save your history</label>
-                                    <input 
-                                        type="email" 
+                                    <input
+                                        type="email"
                                         required
-                                        placeholder="Enter your email..." 
+                                        placeholder="Enter your email..."
                                         value={loginEmail}
                                         onChange={(e) => setLoginEmail(e.target.value)}
                                         className="w-full bg-white text-sm text-gray-800 px-3 py-2 rounded-xl outline-none border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                                     />
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         disabled={authLoading}
                                         className="w-full bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-sm"
                                     >
@@ -274,17 +280,17 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                             )}
                         </div>
 
-                        
+
                     </div>
                     <AlertModal
-                            isOpen={isClearModalOpen}
-                            onClose={() => setIsClearModalOpen(false)}
-                            onConfirm={() => handleDelete(chatIdToDelete)}
-                            title="Delete Chat"
-                            message="Are you sure you want to delete this chat? This action cannot be undone."
-                            type="delete"
-                            confirmText="Delete"
-                        />
+                        isOpen={isClearModalOpen}
+                        onClose={() => setIsClearModalOpen(false)}
+                        onConfirm={() => handleDelete(chatIdToDelete)}
+                        title="Delete Chat"
+                        message="Are you sure you want to delete this chat? This action cannot be undone."
+                        type="delete"
+                        confirmText="Delete"
+                    />
                 </>
 
             ) : (
