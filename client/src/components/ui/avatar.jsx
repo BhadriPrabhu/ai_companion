@@ -486,6 +486,7 @@ const AvatarDemo = () => {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isBrowserModalOpen, setIsBrowserModalOpen] = useState(false);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -616,7 +617,11 @@ const AvatarDemo = () => {
   };
 
   const toggleRecording = () => {
-    if (!recognitionRef.current) return alert("Your browser doesn't support microphone input.");
+    if (!recognitionRef.current) {
+      // alert("Your browser doesn't support microphone input.");
+      setIsBrowserModalOpen(true);
+      return;
+    }
     if (isRecording) {
       recognitionRef.current.stop();
     } else {
@@ -715,14 +720,24 @@ const AvatarDemo = () => {
           type='delete'
         />
         <AlertModal
-        isOpen={isSessionModalOpen}
-        onClose={() => setIsSessionModalOpen(false)}
-        onConfirm={() => setIsSessionModalOpen(false)}
-        message="Please select or create a chat session first."
-        title="No Chat Session"
-        type='warning'
-        noCancelText={true}
-        confirmText='OK'
+          isOpen={isSessionModalOpen}
+          onClose={() => setIsSessionModalOpen(false)}
+          onConfirm={() => setIsSessionModalOpen(false)}
+          message="Please select or create a chat session first."
+          title="No Chat Session"
+          type='warning'
+          noCancelText={true}
+          confirmText='OK'
+        />
+        <AlertModal
+          isOpen={isBrowserModalOpen}
+          onClose={() => setIsBrowserModalOpen(false)}
+          onConfirm={() => setIsBrowserModalOpen(false)}
+          message="Your browser doesn't support microphone input. Please use a modern browser like Chrome or Firefox."
+          title="Browser Not Supported"
+          type='warning'
+          noCancelText={true}
+          confirmText='OK'
         />
         <div className={`transition-all duration-300 ${isMinimized
           ? 'fixed bottom-4 right-4 z-50 w-auto' // Compact pill floating in the bottom right
