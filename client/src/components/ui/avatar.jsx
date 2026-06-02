@@ -691,7 +691,7 @@ const AvatarDemo = () => {
       </div>
 
 
-      <div className="relative h-full flex-1 w-full flex flex-col justify-end p-3 sm:p-4 pointer-events-none overflow-hidden">
+      <div className="relative h-full flex-1 w-full flex flex-col justify-end p-3 sm:p-4 overflow-hidden">
         {/* The Full-Screen 3D Canvas */}
         <AIEmotionAnalyzer
           avatarState={avatarState}
