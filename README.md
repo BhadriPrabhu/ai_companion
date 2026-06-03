@@ -65,6 +65,3 @@ npm start
 
 - Frontend entry: `client/src/main.jsx`
 - Main server file: `server/server.js`
-
----
-If you'd like, I can expand sections (usage examples, env variables, API spec) or generate a `LICENSE` and .gitignore.
