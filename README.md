@@ -65,3 +65,9 @@ npm start
 
 - Frontend entry: `client/src/main.jsx`
 - Main server file: `server/server.js`
+
+## Author
+
+**Bhadri Prabhu K**
+* GitHub: [@BhadriPrabhu](https://github.com/BhadriPrabhu)
+* LinkedIn: [LinkedIn Profile](https://www.linkedin.com/in/bhadri-prabhu-k-7a111b326/)
