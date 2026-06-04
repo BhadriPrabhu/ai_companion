@@ -78,15 +78,11 @@ app.post('/api/auth/login', async (req, res) => {
         // Check if user exists
         let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
-        // If not, create them
         if (result.rows.length === 0) {
-            result = await pool.query(
-                'INSERT INTO users (email) VALUES ($1) RETURNING *',
-                [email]
-            );
+            return res.status(404).json({ error: "User not found" });
         }
 
-        res.json(result.rows[0]); // Returns the user object with the UUID
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
