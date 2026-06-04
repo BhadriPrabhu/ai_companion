@@ -196,8 +196,8 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
                                         <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-full flex-shrink-0">
                                             <User size={16} />
                                         </div>
-                                        <span className="text-xs text-gray-600 font-medium truncate" title={currentUser.email}>
-                                            {currentUser ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : 'User'}
+                                        <span className="text-xs text-gray-600 font-medium truncate" title={currentUser?.email || 'User'}>
+                                            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : 'User'}
                                         </span>
                                     </div>
                                     <button
