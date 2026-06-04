@@ -513,9 +513,17 @@ const AvatarDemo = () => {
   const isWakeWordActiveRef = useRef(isWakeWordActive);
   const inputTextRef = useRef(inputText);
 
+  const currentChatIdRef = useRef(currentChatId);
+  const currentUserRef = useRef(currentUser);
+  const chatHistoryRef = useRef(chatHistory);
+
   useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
   useEffect(() => { isWakeWordActiveRef.current = isWakeWordActive; }, [isWakeWordActive]);
   useEffect(() => { inputTextRef.current = inputText; }, [inputText]);
+
+  useEffect(() => { currentChatIdRef.current = currentChatId; }, [currentChatId]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+  useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -667,7 +675,12 @@ const AvatarDemo = () => {
     const text = typeof textToSend === 'string' ? textToSend : inputTextRef.current;
     if (!text || !text.trim()) return;
 
-    if (!isGuest && !currentChatId) {
+    const activeChatId = currentChatIdRef.current;
+    const activeUser = currentUserRef.current;
+    const activeHistory = chatHistoryRef.current;
+    const activeIsGuest = !activeUser;
+
+    if (!activeIsGuest && !activeChatId) {
       // alert("Please select or create a chat session first.");
       setIsSessionModalOpen(true);
       setInputText('');
@@ -681,9 +694,9 @@ const AvatarDemo = () => {
     setMessage(null); // Reset avatar to idle while waiting
 
     try {
-      const payload = isGuest
-        ? { message: text, isGuest: true, history: chatHistory } // Pass local history
-        : { message: text, isGuest: false, chatId: currentChatId, userId: currentUser.id }; // Pass DB IDs
+      const payload = activeIsGuest
+        ? { message: text, isGuest: true, history: activeHistory } // Pass local history
+        : { message: text, isGuest: false, chatId: activeChatId, userId: activeUser.id }; // Pass DB IDs
 
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, payload);
 
