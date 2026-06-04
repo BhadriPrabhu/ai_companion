@@ -469,6 +469,11 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 };
 
 const AvatarDemo = () => {
+
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
+
   const [avatarState, setAvatarState] = useState('idle');
   const [message, setMessage] = useState(null);
   const [inputText, setInputText] = useState('');
@@ -484,7 +489,7 @@ const AvatarDemo = () => {
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', text: "Hi there! I am Zara. How can I help you today?" }
   ]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
@@ -511,6 +516,21 @@ const AvatarDemo = () => {
   useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
   useEffect(() => { isWakeWordActiveRef.current = isWakeWordActive; }, [isWakeWordActive]);
   useEffect(() => { inputTextRef.current = inputText; }, [inputText]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const currentlyMobile = window.innerWidth < 768;
+
+      if (currentlyMobile !== isMobile) {
+        setIsMobile(currentlyMobile);
+        setIsSidebarOpen(!currentlyMobile);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMobile]);
 
   // Auto-scroll to the bottom whenever a new message appears
   useEffect(() => {
