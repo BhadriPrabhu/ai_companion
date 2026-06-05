@@ -552,7 +552,7 @@ const AvatarDemo = () => {
 
     const fetchHistory = async () => {
       try {
-        const response = await api.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${currentChatId}/messages`);
+        const response = await api.get(`/api/chats/${currentChatId}/messages`);
 
         if (response.data.length > 0) {
           const formattedHistory = response.data.map(msg => ({
@@ -698,7 +698,7 @@ const AvatarDemo = () => {
         ? { message: text, isGuest: true, history: activeHistory } // Pass local history
         : { message: text, isGuest: false, chatId: activeChatId, userId: activeUser.id }; // Pass DB IDs
 
-      const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, payload);
+      const response = await api.post(`/api/chat`, payload);
 
       const aiData = response.data;
 

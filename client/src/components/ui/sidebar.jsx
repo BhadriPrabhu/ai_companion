@@ -22,7 +22,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
             }
 
             try {
-                const response = await api.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats?userId=${currentUser.id}`);
+                const response = await api.get(`/api/chats?userId=${currentUser.id}`);
                 setChats(response.data);
 
                 if (response.data.length > 0 && !currentChatId) {
@@ -44,7 +44,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const createNewChat = async () => {
         if (!currentUser) return;
         try {
-            const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`, {
+            const response = await api.post(`/api/chats`, {
                 title: "New Conversation",
                 userId: currentUser.id,
             });
@@ -75,7 +75,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
         }
 
         try {
-            const response = await api.put(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}`, {
+            const response = await api.put(`/api/chats/${chatId}`, {
                 title: editTitle.trim()
             });
 
@@ -88,7 +88,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
     const handleDelete = async (chatId) => {
         try {
-            await api.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}?userId=${currentUser.id}`);
+            await api.delete(`/api/chats/${chatId}?userId=${currentUser.id}`);
 
             const updatedChats = chats.filter(chat => chat.id !== chatId);
             setChats(updatedChats);

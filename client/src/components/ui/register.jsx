@@ -17,7 +17,7 @@ const Register = ({ setCurrentUser, onNavigateBack, onNavigateToLogin }) => {
 
         try {
             // Updated endpoint for registration
-            const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/register`, {
+            const response = await api.post(`/api/auth/register`, {
                 name: name.trim(),
                 email: email.trim()
             });

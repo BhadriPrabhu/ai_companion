@@ -15,7 +15,7 @@ const Login = ({ setCurrentUser, onNavigateBack, onNavigateToRegister }) => {
         setError('');
 
         try {
-            const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
+            const response = await api.post(`/api/auth/login`, {
                 email: email.trim()
             });
 
