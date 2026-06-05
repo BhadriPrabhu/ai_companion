@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
     try {
@@ -16,7 +17,13 @@ export const registerUser = async (req, res) => {
             [name, email]
         );
 
-        res.json(result.rows[0]);
+        const token = jwt.sign(
+            { id: result.rows[0].id, email: result.rows[0].email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({ user: result.rows[0], token });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -33,7 +40,9 @@ export const loginUser = async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        res.json(result.rows[0]);
+        const token = jwt.sign({ id: result.rows[0].id, email: result.rows[0].email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.json({ user: result.rows[0], token });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
