@@ -104,6 +104,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const handleLogout = () => {
         setCurrentUser(null);
         localStorage.removeItem('zara_user');
+        localStorage.removeItem('token');
         setChats([]);
         onSelectChat(null);
     };

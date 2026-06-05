@@ -19,9 +19,11 @@ const Login = ({ setCurrentUser, onNavigateBack, onNavigateToRegister }) => {
                 email: email.trim()
             });
 
-            const user = response.data;
+            const { user, token } = response.data;
             setCurrentUser(user);
             localStorage.setItem('zara_user', JSON.stringify(user));
+
+            localStorage.setItem('token', token);
 
             // Navigate back to the chat interface after successful login
             if (onNavigateBack) onNavigateBack();
