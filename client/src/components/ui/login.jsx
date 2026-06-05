@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Sparkle, ArrowRight, Loader2 } from 'lucide-react';
+import api from '../../api/api';
 
 const Login = ({ setCurrentUser, onNavigateBack, onNavigateToRegister }) => {
     const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ const Login = ({ setCurrentUser, onNavigateBack, onNavigateToRegister }) => {
         setError('');
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
+            const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auth/login`, {
                 email: email.trim()
             });
 

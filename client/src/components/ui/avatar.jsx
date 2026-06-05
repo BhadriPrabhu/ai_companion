@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import axios from 'axios';
 import { ChevronDown, ChevronUp, Eye, Maximize2, Mic, Minimize2, Target } from 'lucide-react';
 import FlatUpArrow from '../../assets/icons/flatUpArrow';
 import Loader from '../../assets/icons/loader';
@@ -9,6 +8,7 @@ import Sidebar from './sidebar';
 import AlertModal from './alertModal';
 import Login from './login';
 import Register from './register';
+import api from '../../api/api';
 
 const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMessagePlayed, isFocusMode, isSidebarOpen }) => {
   const mountRef = useRef(null);
@@ -552,7 +552,7 @@ const AvatarDemo = () => {
 
     const fetchHistory = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${currentChatId}/messages`);
+        const response = await api.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${currentChatId}/messages`);
 
         if (response.data.length > 0) {
           const formattedHistory = response.data.map(msg => ({
@@ -698,7 +698,7 @@ const AvatarDemo = () => {
         ? { message: text, isGuest: true, history: activeHistory } // Pass local history
         : { message: text, isGuest: false, chatId: activeChatId, userId: activeUser.id }; // Pass DB IDs
 
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, payload);
+      const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chat`, payload);
 
       const aiData = response.data;
 

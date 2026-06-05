@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
 import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import AlertModal from './alertModal';
+import api from '../../api/api';
 
 const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser, onNavigateToLogin, onNavigateToRegister }) => {
     const [chats, setChats] = useState([]);
@@ -22,7 +22,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
             }
 
             try {
-                const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats?userId=${currentUser.id}`);
+                const response = await api.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats?userId=${currentUser.id}`);
                 setChats(response.data);
 
                 if (response.data.length > 0 && !currentChatId) {
@@ -44,7 +44,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const createNewChat = async () => {
         if (!currentUser) return;
         try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`, {
+            const response = await api.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats`, {
                 title: "New Conversation",
                 userId: currentUser.id,
             });
@@ -75,7 +75,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
         }
 
         try {
-            const response = await axios.put(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}`, {
+            const response = await api.put(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}`, {
                 title: editTitle.trim()
             });
 
@@ -88,7 +88,7 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
     const handleDelete = async (chatId) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}?userId=${currentUser.id}`);
+            await api.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/chats/${chatId}?userId=${currentUser.id}`);
 
             const updatedChats = chats.filter(chat => chat.id !== chatId);
             setChats(updatedChats);
