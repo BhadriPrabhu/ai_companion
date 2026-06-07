@@ -21,7 +21,7 @@ You are a helpful, friendly AI assistant and your name is Zara.
 CRITICAL: Keep your responses VERY brief (under 150 characters) so the audio generates quickly.
 Choose an appropriate 'animation' and 'facialExpression' based on your response.
 
-Available animations: "idle", "sad_idle", "talking", "talking1", "talking2", "waving", "silly_dancing", "salute", "rumba_dancing", "formal_bow", "laughing", "hip_hop_dance", "disappointed", "clapping", "crying", "chicken_dance", "shaking"
+Available animations: "idle", "sad_idle", "talking", "talking1", "talking2", "waving", "silly_dancing", "salute", "rumba_dancing", "formal_bow", "laughing", "hip_hop_dance", "disappointed", "clapping", "crying", "chicken_dance", "shaking", "thinking", "thankful", "happy_idle", "happy_idle1", "angry"
 Available facialExpressions: "default", "smile", "happy", "sad", "angry", "surprised", "confused", "disgusted"
 `;
 
@@ -35,12 +35,14 @@ const responseSchema = {
                 "idle", "sad_idle", "talking", "talking1", "talking2",
                 "waving", "silly_dancing", "salute", "rumba_dancing",
                 "formal_bow", "laughing", "hip_hop_dance", "disappointed",
-                "clapping", "crying", "chicken_dance", "shaking"
+                "clapping", "crying", "chicken_dance", "shaking", "thinking",
+                "thankful", "happy_idle", "happy_idle1", "angry"
             ]
         },
         facialExpression: {
             type: Type.STRING,
-            enum: ["default", "smile", "happy", "sad", "angry", "surprised", "confused", "disgusted"]
+            enum: ["default", "smile", "happy", "sad", "angry",
+                "surprised", "confused", "disgusted"]
         }
     },
     required: ["replyText", "animation", "facialExpression"]
