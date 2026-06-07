@@ -53,7 +53,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     },
     happy: {
       browInnerUp: 0.17, eyeSquintLeft: 0.4, eyeSquintRight: 0.44,
-      mouthSmileLeft: 0.5, mouthSmileRight: 0.5,
+      mouthSmileLeft: 0.3, mouthSmileRight: 0.3,
     },
     sad: {
       browInnerUp: 0.7, browDownLeft: 0.4, browDownRight: 0.4,
@@ -88,8 +88,8 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
   const avatarStateConfig = {
     idle: { animation: "idle", expression: "default" },
     sad_idle: { animation: "sad idle", expression: "sad" },
-    talking: { animation: "talking", expression: "default" },
-    talking1: { animation: "talking1", expression: "default" },
+    talking: { animation: "talking", expression: "smile" },
+    talking1: { animation: "talking1", expression: "smile" },
     talking2: { animation: "talking2", expression: "smile" },
     waving: { animation: "waving", expression: "happy" },
     silly_dancing: { animation: "silly_dancing", expression: "happy" },
@@ -440,14 +440,14 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
                 if (visemes) {
                   visemes.forEach(viseme => {
                     appliedMorphTargets.push(viseme);
-                    lerpMorphTarget(viseme, 1, 0.2);
+                    lerpMorphTarget(viseme, 0.7, 0.2);
                   });
                 }
 
                 // Force jaw drop on loud vowels
                 if (['D', 'E', 'F'].includes(mouthCue.value)) {
                   appliedMorphTargets.push("jawOpen");
-                  lerpMorphTarget("jawOpen", 0.6, 0.2);
+                  lerpMorphTarget("jawOpen", 0.4, 0.2);
                 }
                 break;
               }
