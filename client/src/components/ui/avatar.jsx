@@ -102,7 +102,12 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     clapping: { animation: "clapping", expression: "happy" },
     crying: { animation: "crying", expression: "sad" },
     chicken_dance: { animation: "chicken_dance", expression: "happy" },
-    shaking: { animation: "shaking", expression: "surprised" }
+    shaking: { animation: "shaking", expression: "surprised" },
+    thinking: { animation: "thinking", expression: "confused" },
+    angry: { animation: "angry", expression: "angry" },
+    thankful: { animation: "thankful", expression: "happy" },
+    happy_idle: { animation: "happy_idle", expression: "happy" },
+    happy_idle1: { animation: "happy_idle1", expression: "happy" }
   };
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
@@ -125,7 +130,7 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
       const [gltf, animationsGltf] = await Promise.all([
         new Promise((res, rej) => loader.load('/model.glb', res, undefined, rej)),
-        new Promise((res, rej) => loader.load('/animation3.glb', res, undefined, rej))
+        new Promise((res, rej) => loader.load('/animation4.glb', res, undefined, rej))
       ]);
 
       const avatar = gltf.scene;
@@ -594,7 +599,8 @@ const AvatarDemo = () => {
     'idle', 'sad_idle', 'talking', 'talking1', 'talking2',
     'waving', 'silly_dancing', 'salute', 'rumba_dancing',
     'formal_bow', 'laughing', 'hip_hop_dance', 'disappointed',
-    'clapping', 'crying', 'chicken_dance', 'shaking'
+    'clapping', 'crying', 'chicken_dance', 'shaking', 'thinking',
+    'thankful', 'happy_idle', 'happy_idle1', 'angry'
   ];
 
   // 🚨 NEW: Continuous Speech Recognition & Interruption Logic
