@@ -55,6 +55,26 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
       browInnerUp: 0.17, eyeSquintLeft: 0.4, eyeSquintRight: 0.44,
       mouthSmileLeft: 0.5, mouthSmileRight: 0.5,
     },
+    sad: {
+      browInnerUp: 0.7, browDownLeft: 0.4, browDownRight: 0.4,
+      mouthFrownLeft: 0.6, mouthFrownRight: 0.6, mouthRollLower: 0.3,
+    },
+    angry: {
+      browDownLeft: 0.9, browDownRight: 0.9, eyeSquintLeft: 0.6, eyeSquintRight: 0.6,
+      mouthPressLeft: 0.5, mouthPressRight: 0.5, noseSneerLeft: 0.4, noseSneerRight: 0.4,
+    },
+    surprised: {
+      browInnerUp: 0.9, browOuterUpLeft: 0.8, browOuterUpRight: 0.8,
+      eyeWideLeft: 0.7, eyeWideRight: 0.7, mouthDimpleLeft: 0.2, mouthDimpleRight: 0.2,
+    },
+    confused: {
+      browDownLeft: 0.7, browOuterUpRight: 0.7, eyeSquintLeft: 0.5,
+      mouthLeft: 0.4, mouthPucker: 0.3,
+    },
+    disgusted: {
+      noseSneerLeft: 0.9, noseSneerRight: 0.9, browDownLeft: 0.5, browDownRight: 0.5,
+      mouthUpperUpLeft: 0.5, mouthUpperUpRight: 0.5,
+    }
   };
 
   const visemeMapping = {
@@ -67,10 +87,10 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
 
   const avatarStateConfig = {
     idle: { animation: "idle", expression: "default" },
-    sad_idle: { animation: "sad idle", expression: "default" },
+    sad_idle: { animation: "sad idle", expression: "sad" },
     talking: { animation: "talking", expression: "default" },
     talking1: { animation: "talking1", expression: "default" },
-    talking2: { animation: "talking2", expression: "default" },
+    talking2: { animation: "talking2", expression: "smile" },
     waving: { animation: "waving", expression: "happy" },
     silly_dancing: { animation: "silly_dancing", expression: "happy" },
     salute: { animation: "salute", expression: "default" },
@@ -78,11 +98,11 @@ const AIEmotionAnalyzer = ({ avatarState, onLoad, className = "", message, onMes
     formal_bow: { animation: "formal_bow", expression: "default" },
     laughing: { animation: "laughing", expression: "happy" },
     hip_hop_dance: { animation: "hip_hop_dance", expression: "smile" },
-    disappointed: { animation: "disappointed", expression: "default" },
+    disappointed: { animation: "disappointed", expression: "confused" },
     clapping: { animation: "clapping", expression: "happy" },
-    crying: { animation: "crying", expression: "default" },
+    crying: { animation: "crying", expression: "sad" },
     chicken_dance: { animation: "chicken_dance", expression: "happy" },
-    shaking: { animation: "shaking", expression: "default" }
+    shaking: { animation: "shaking", expression: "surprised" }
   };
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
