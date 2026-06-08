@@ -1,40 +1,38 @@
 import './App.css'
-import AIEmotionAnalyzer from './components/ui/avatar'
-// import InteractiveAvatarDashboard from './screens/dashboard'
-import Dashboard from './screens/dashboard'
+import AppRouter from './router';
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught in boundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <h2>Something went wrong while loading the app.</h2>
+          <p>Please refresh the page and try again.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
 
-
-  class ErrorBoundary extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = { hasError: false };
-    }
-    static getDerivedStateFromError() {
-      return { hasError: true };
-    }
-    componentDidCatch(error, errorInfo) {
-      console.error("Error caught in boundary:", error, errorInfo);
-    }
-    render() {
-      if (this.state.hasError) {
-        return <h2>Something went wrong while loading the avatar.</h2>;
-      }
-      return this.props.children;
-    }
-  }
-
-
-
   return (
     <div>
-      {/* <Dashboard/> */}
-      {/* <Avatar/> */}
       <ErrorBoundary>
-        <AIEmotionAnalyzer />
+        <AppRouter />
       </ErrorBoundary>
-      {/* <Dashboard /> */}
     </div>
   )
 }
