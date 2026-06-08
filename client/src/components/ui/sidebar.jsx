@@ -79,7 +79,8 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
         try {
             const response = await api.put(`/api/chats/${chatId}`, {
-                title: editTitle.trim()
+                title: editTitle.trim(),
+                userId: currentUser.id
             });
 
             setChats(chats.map(chat => chat.id === chatId ? response.data : chat));
