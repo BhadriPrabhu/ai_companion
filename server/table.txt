@@ -2,6 +2,7 @@ users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
