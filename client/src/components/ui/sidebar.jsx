@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User, UserPlus } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Plus, Sparkle, PanelRightClose, PanelRightOpen, LogIn, LogOut, User, UserPlus, LayoutDashboard } from 'lucide-react';
 import AlertModal from './alertModal';
 import api from '../../api/api';
+import { useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen, currentUser, setCurrentUser, onNavigateToLogin, onNavigateToRegister }) => {
     const [chats, setChats] = useState([]);
@@ -11,6 +12,8 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
     const [editTitle, setEditTitle] = useState("");
     const [isClearModalOpen, setIsClearModalOpen] = useState(false);
     const [chatIdToDelete, setChatIdToDelete] = useState(null);
+
+    const navigate = useNavigate();
 
     const inputRef = useRef(null);
 
@@ -192,22 +195,38 @@ const Sidebar = ({ currentChatId, onSelectChat, setIsSidebarOpen, isSidebarOpen,
 
                         <div className="pt-4 border-t border-gray-200/60 mt-auto">
                             {currentUser ? (
-                                <div className="flex items-center justify-between bg-white/50 p-2 rounded-xl border border-gray-200/50">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-full flex-shrink-0">
-                                            <User size={16} />
+                                <div className="flex flex-col bg-white/50 p-2 rounded-xl border border-gray-200/50">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-full flex-shrink-0">
+                                                <User size={16} />
+                                            </div>
+                                            <span className="text-xs text-gray-600 font-medium truncate" title={currentUser?.email || 'User'}>
+                                                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : 'User'}
+                                            </span>
                                         </div>
-                                        <span className="text-xs text-gray-600 font-medium truncate" title={currentUser?.email || 'User'}>
-                                            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : 'User'}
-                                        </span>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="text-gray-400 hover:text-red-500 transition-colors p-1.5"
+                                            title="Log Out"
+                                        >
+                                            <LogOut size={16} />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="text-gray-400 hover:text-red-500 transition-colors p-1.5"
-                                        title="Log Out"
-                                    >
-                                        <LogOut size={16} />
-                                    </button>
+
+                                    {currentUser.role === 'admin' && (
+                                        <button
+                                            onClick={() => {
+                                                navigate('/admin');
+                                            }}
+                                            className="w-full mt-2 bg-white/50 hover:bg-white text-gray-600 font-medium py-1.5 px-3 rounded-lg flex items-center justify-center gap-2 border border-gray-300/50 hover:border-gray-300 transition-all text-xs"
+
+                                        >
+                                            <LayoutDashboard size={16} />
+                                            Go to Admin Dashboard
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-2.5">
