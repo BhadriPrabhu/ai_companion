@@ -53,6 +53,9 @@ const isWin = process.platform === "win32";
 const RHUBARB_PATH = isWin ? 'bin/rhubarb.exe' : './bin/rhubarb';
 
 export const userChat = async (req, res) => {
+
+    const startTime = Date.now();
+
     try {
         const { message, chatId, userId, isGuest, history } = req.body;
 
@@ -103,17 +106,30 @@ export const userChat = async (req, res) => {
         const aiData = JSON.parse(aiResponse.text);
         console.log("Gemini decided:", aiData);
 
+        const responseTimeMs = Date.now() - startTime;
+        // Depending on your GenAI SDK version, tokens might be under usageMetadata or similar
+        const tokensUsed = aiResponse.usageMetadata?.totalTokenCount || 0; 
+        
+        console.log(`Gemini decided:`, aiData);
+        console.log(`Metrics -> Time: ${responseTimeMs}ms | Tokens: ${tokensUsed}`);
+
         // 4. Save AI Response to DB
         if (!isGuest && chatId && userId) {
             await pool.query(
-                'INSERT INTO messages (chat_id, role, content) VALUES ($1, $2, $3)',
-                [chatId, 'model', aiData.replyText]
+                'INSERT INTO messages (chat_id, role, content, response_time_ms, animation, facial_expression, tokens_used) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                [chatId, 'model', aiData.replyText, responseTimeMs, aiData.animation, aiData.facialExpression, tokensUsed]
             );
             await pool.query(
                 'UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
                 [chatId]
             );
         }
+
+        await pool.query(
+            `INSERT INTO api_metrics (endpoint, method, status_code, response_time_ms) 
+             VALUES ($1, $2, $3, $4)`,
+            ['/api/chat', 'POST', 200, responseTimeMs]
+        );
 
         // 2. Get the Voice (Microsoft Edge Neural TTS - 100% FREE)
         console.log("Generating audio with Edge Neural TTS...");
@@ -171,6 +187,17 @@ export const userChat = async (req, res) => {
 
     } catch (error) {
         console.error("Server Error:", error);
+
+        const failTimeMs = Date.now() - startTime;
+        try {
+             await pool.query(
+                `INSERT INTO api_metrics (endpoint, method, status_code, response_time_ms) 
+                 VALUES ($1, $2, $3, $4)`,
+                ['/api/chat', 'POST', 500, failTimeMs]
+            );
+        } catch(dbErr) {
+            console.error("Error:",dbErr.message);
+        }
 
         if (error.status === 429 || (error.message && error.message.includes('429'))) {
             console.log("Hit rate limit, sending fallback response to React...");
