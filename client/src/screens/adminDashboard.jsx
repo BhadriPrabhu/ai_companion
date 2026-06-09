@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Users, MessageSquare, Activity, Settings, Search, LogOut, 
-  BarChart3, Clock, TrendingUp, Eye 
+  BarChart3, Clock, TrendingUp, Eye, 
+  ArrowUpRight,
+  Bot
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -9,9 +11,9 @@ const AdminDashboard = () => {
   
   // --- MOCK DATA ---
   const stats = [
-    { title: 'Total Users', value: '1,248', icon: <Users size={24} className="text-teal-500" /> },
-    { title: 'Active Chat Sessions', value: '342', icon: <MessageSquare size={24} className="text-blue-500" /> },
-    { title: 'API Requests Today', value: '8,439', icon: <Activity size={24} className="text-amber-500" /> },
+    { title: 'Total Users', value: '1,248', icon: <Users size={20} className="text-teal-500" /> },
+    { title: 'Active Chat Sessions', value: '342', icon: <MessageSquare size={20} className="text-blue-500" /> },
+    { title: 'API Requests Today', value: '8,439', icon: <Activity size={20} className="text-amber-500" /> },
   ];
 
   const recentUsers = [
@@ -41,10 +43,10 @@ const AdminDashboard = () => {
   // --- TAB RENDERERS ---
   const renderOverview = () => (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <div key={index} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="p-2 bg-slate-200 rounded-lg border border-slate-150">
               {stat.icon}
             </div>
             <div>
@@ -77,10 +79,10 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 font-medium">{user.name}</td>
                   <td className="px-6 py-4 text-slate-500">{user.email}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                    <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold tracking-wider ${
                       user.role === 'admin' ? 'bg-teal-100 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
-                      {user.role}
+                      {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-slate-500">{user.joined}</td>
@@ -100,7 +102,7 @@ const AdminDashboard = () => {
 
   const renderAnalytics = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Performance Card */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -148,7 +150,7 @@ const AdminDashboard = () => {
       </div>
       <div className="divide-y divide-slate-100">
         {chatLogs.map((log, idx) => (
-          <div key={idx} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between">
+          <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
                 <MessageSquare size={20} />
@@ -178,48 +180,48 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
       
-      {/* Dark Sidebar to contrast with the light Avatar UI */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-xl">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-teal-500"></div>
+{/* Light Sidebar */}
+      <div className="w-64 bg-white border-r border-slate-200 flex flex-col z-10 shadow-lg">
+        <div className="h-16 flex items-center px-6 border-b border-slate-200">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            {/* <div className="w-3 h-3 rounded-full bg-teal-500"></div> */}
             Zara Admin
           </h1>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1">
           <button 
             onClick={() => setActiveTab('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-teal-500/15 text-teal-400 font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 font-medium'}`}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <Activity size={20} />
             <span>Overview</span>
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-teal-500/15 text-teal-400 font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 font-medium'}`}
+             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <BarChart3 size={20} />
             <span>Analytics & Stats</span>
           </button>
           <button 
             onClick={() => setActiveTab('users')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${activeTab === 'users' ? 'bg-teal-500/15 text-teal-400 font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 font-medium'}`}
+             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'users' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <Users size={20} />
             <span>Users & Roles</span>
           </button>
           <button 
             onClick={() => setActiveTab('chats')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${activeTab === 'chats' ? 'bg-teal-500/15 text-teal-400 font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 font-medium'}`}
+             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'chats' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <MessageSquare size={20} />
             <span>Chat Logs</span>
           </button>
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <button className="w-full flex items-center gap-3 px-4 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-colors font-medium">
-            <LogOut size={20} />
-            <span>Exit Admin</span>
+        <div className="p-4 border-t border-slate-200">
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-indigo-600  border border-gray-350/50 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-colors font-medium">
+            <Bot size={24} />
+            <span>Go to ChatBot</span>
           </button>
         </div>
       </div>
@@ -243,7 +245,7 @@ const AdminDashboard = () => {
         </header>
 
         {/* Dashboard Content Area */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4">
           <div className="max-w-6xl mx-auto">
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'analytics' && renderAnalytics()}
