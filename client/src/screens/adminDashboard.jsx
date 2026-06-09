@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  Users, MessageSquare, Activity, Settings, Search, LogOut, 
-  BarChart3, Clock, TrendingUp, Eye, 
+import {
+  Users, MessageSquare, Activity, Settings, Search, LogOut,
+  BarChart3, Clock, TrendingUp, Eye,
   ArrowUpRight,
   Bot
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
+
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // --- MOCK DATA ---
   const stats = [
     { title: 'Total Users', value: '1,248', icon: <Users size={20} className="text-teal-500" /> },
@@ -79,9 +83,8 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 font-medium">{user.name}</td>
                   <td className="px-6 py-4 text-slate-500">{user.email}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold tracking-wider ${
-                      user.role === 'admin' ? 'bg-teal-100 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold tracking-wider ${user.role === 'admin' ? 'bg-teal-100 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
                       {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
                     </span>
                   </td>
@@ -106,7 +109,7 @@ const AdminDashboard = () => {
         {/* Performance Card */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Clock size={20} className="text-teal-500"/> Avatar Performance
+            <Clock size={20} className="text-teal-500" /> Avatar Performance
           </h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -123,7 +126,7 @@ const AdminDashboard = () => {
         {/* Animation Usage Chart (Built with Tailwind) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={20} className="text-amber-500"/> Top Animations Triggered
+            <TrendingUp size={20} className="text-amber-500" /> Top Animations Triggered
           </h3>
           <div className="space-y-4">
             {analyticsData.topAnimations.map((anim, idx) => (
@@ -161,9 +164,8 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                log.sentiment === 'Positive' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
-              }`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${log.sentiment === 'Positive' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                }`}>
                 {log.sentiment}
               </span>
               <button className="flex items-center gap-1 text-sm text-teal-600 font-medium hover:text-teal-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm transition-colors hover:bg-slate-50">
@@ -179,8 +181,8 @@ const AdminDashboard = () => {
   // --- MAIN RENDER ---
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      
-{/* Light Sidebar */}
+
+      {/* Light Sidebar */}
       <div className="w-64 bg-white border-r border-slate-200 flex flex-col z-10 shadow-lg">
         <div className="h-16 flex items-center px-6 border-b border-slate-200">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -189,37 +191,42 @@ const AdminDashboard = () => {
           </h1>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          <button 
+          <button
             onClick={() => setActiveTab('overview')}
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <Activity size={20} />
             <span>Overview</span>
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('analytics')}
-             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <BarChart3 size={20} />
             <span>Analytics & Stats</span>
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('users')}
-             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'users' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'users' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <Users size={20} />
             <span>Users & Roles</span>
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('chats')}
-             className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'chats' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${activeTab === 'chats' ? 'bg-teal-100 text-teal-800 font-semibold' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium'}`}
           >
             <MessageSquare size={20} />
             <span>Chat Logs</span>
           </button>
         </nav>
         <div className="p-4 border-t border-slate-200">
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-indigo-600  border border-gray-350/50 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-colors font-medium">
+          <button
+            className="w-full flex items-center gap-3 px-3 py-2 text-indigo-600  border border-gray-350/50 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-colors font-medium"
+            onClick={() => {
+              navigate("/");
+            }}
+          >
             <Bot size={24} />
             <span>Go to ChatBot</span>
           </button>
@@ -228,7 +235,7 @@ const AdminDashboard = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        
+
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
           <h2 className="text-2xl font-bold text-slate-800 capitalize">
@@ -236,9 +243,9 @@ const AdminDashboard = () => {
           </h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder={`Search ${activeTab}...`} 
+            <input
+              type="text"
+              placeholder={`Search ${activeTab}...`}
               className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white w-64 transition-all text-sm text-slate-700"
             />
           </div>
