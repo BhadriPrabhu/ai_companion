@@ -19,5 +19,18 @@ messages (
     chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL CHECK (role IN ('user', 'model')),
     content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    response_time_ms INTEGER,
+    animation VARCHAR(50),
+    facial_expression VARCHAR(50),
+    tokens_used INTEGER DEFAULT 0;
+);
+
+api_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    endpoint VARCHAR(255) NOT NULL,
+    method VARCHAR(10) NOT NULL,
+    status_code INTEGER NOT NULL,
+    response_time_ms INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
