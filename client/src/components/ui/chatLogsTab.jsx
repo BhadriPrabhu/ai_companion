@@ -15,9 +15,9 @@ const ChatLogsTab = () => {
       </div>
       <div className="divide-y divide-slate-100">
         {chatLogs.map((log, idx) => (
-          <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+          <div key={idx} className="px-4 py-2 hover:bg-slate-50 transition-colors flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
+              <div className="p-2 bg-teal-50 text-teal-600 rounded-lg border border-teal-100">
                 <MessageSquare size={20} />
               </div>
               <div>
