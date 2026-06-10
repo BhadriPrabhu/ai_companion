@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 import api from '../../api/api';
+import { formatDate } from '../../utils/dateFormatter';
 
 const UsersTab = () => {
 
@@ -44,7 +45,7 @@ const UsersTab = () => {
                     {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-500">{user.created_at}</td>
+                <td className="px-6 py-4 text-slate-500">{formatDate(user.created_at || "",true)}</td>
                 <td className="px-6 py-4 text-right">
                   <button className="text-slate-400 hover:text-teal-600 transition-colors p-2 hover:bg-teal-50 rounded-lg">
                     <Settings size={18} />
