@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
+import api from '../../api/api';
 
 const UsersTab = () => {
-  const users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'user', joined: '2026-06-08' },
-    { id: 2, name: 'Super Admin', email: 'admin@yourdomain.com', role: 'admin', joined: '2026-06-07' },
-    { id: 3, name: 'Jane Smith', email: 'jane@example.com', role: 'user', joined: '2026-06-05' },
-  ];
+
+  const [users, setUsers] = useState([]);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const result = await api.get(`/admin/allChat`);
+        setUsers(result.data || []);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      }
+    };
+    fetchUsers();
+  },[]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
