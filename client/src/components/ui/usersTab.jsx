@@ -36,7 +36,7 @@ const UsersTab = () => {
             {users.map((user) => (
               <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
-                  <p className="font-medium text-slate-800">{user.name}</p>
+                  <p className="font-medium text-slate-800">{user.name || "User"}</p>
                   <p className="text-xs text-slate-500">{user.email}</p>
                 </td>
                 <td className="px-6 py-4">
@@ -44,7 +44,7 @@ const UsersTab = () => {
                     {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-500">{user.joined}</td>
+                <td className="px-6 py-4 text-slate-500">{user.created_at}</td>
                 <td className="px-6 py-4 text-right">
                   <button className="text-slate-400 hover:text-teal-600 transition-colors p-2 hover:bg-teal-50 rounded-lg">
                     <Settings size={18} />
