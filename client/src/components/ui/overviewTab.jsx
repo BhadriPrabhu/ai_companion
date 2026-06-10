@@ -24,8 +24,8 @@ const OverviewTab = ({ setActiveTab }) => {
       {/* Expanded Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <div key={index} className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-2 bg-slate-200 rounded-lg border border-slate-100">
               {stat.icon}
             </div>
             <div className="flex-1">
@@ -84,14 +84,14 @@ const OverviewTab = ({ setActiveTab }) => {
         </div>
 
         {/* System Health / Quick Trends Widget (Takes up 1/3 width) */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col">
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Clock size={20} className="text-slate-400" /> System Health
           </h3>
           <div className="space-y-4 flex-1">
             
-            <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/50">
-              <div className="flex justify-between items-center mb-2">
+            <div className="p-2 rounded-xl border border-emerald-100 bg-emerald-50/50">
+              <div className="flex justify-between items-center mb-1">
                 <span className="text-sm font-semibold text-emerald-800">Gemini API Status</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
               </div>
