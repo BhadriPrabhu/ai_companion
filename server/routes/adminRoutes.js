@@ -1,4 +1,4 @@
-import { getAllUsers } from "../controllers/adminController";
+import { getAllUsers } from "../controllers/adminController.js";
 
 import express from "express";
 const router = express.Router();
