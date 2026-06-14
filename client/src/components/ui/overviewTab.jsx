@@ -111,14 +111,14 @@ const OverviewTab = ({ setActiveTab }) => {
               <span className="text-sm font-semibold text-emerald-800">Gemini API Status</span>
               <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </div>
-            <p className="text-xs text-emerald-600 font-bold">Gemini API Latency - {apiStats.gemini_latency_time}ms</p>
+            <p className="text-xs text-emerald-600 font-bold">Gemini API Latency - {apiStats?.gemini_latency_time != null ? `${apiStats?.gemini_latency_time}ms` : "NA"}</p>
             <p className="text-xs text-emerald-600">Operational • 99.9% Uptime</p>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-slate-700">TTS Audio Latency</span>
-              <span className="text-sm font-bold text-slate-800">{apiStats.tts_latency_time}ms</span>
+              <span className="text-sm font-bold text-slate-800">{apiStats?.tts_latency_time != null ? `${apiStats?.tts_latency_time}ms` : "NA"}</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-1.5">
               <div className="bg-teal-500 h-1.5 rounded-full w-[24%]"></div>
@@ -128,7 +128,7 @@ const OverviewTab = ({ setActiveTab }) => {
           <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-slate-700">Rhubarb Processing</span>
-              <span className="text-sm font-bold text-slate-800">{apiStats.rhubarb_latency_time}ms</span>
+              <span className="text-sm font-bold text-slate-800">{apiStats?.rhubarb_latency_time != null ? `${apiStats.rhubarb_latency_time}ms` : "NA"}</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-1.5">
               <div className="bg-blue-500 h-1.5 rounded-full w-[10%]"></div>
