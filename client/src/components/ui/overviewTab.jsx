@@ -5,19 +5,23 @@ import api from '../../api/api';
 const OverviewTab = ({ setActiveTab }) => {
 
   const [apiStats, setApiStats] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const result = await api.get(`/admin/apiStats`);
+        setApiStats(result.data?.data || {});
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
     fetchStats();
   }, [])
 
-  const fetchStats = async () => {
-    try {
-      const result = await api.get(`/admin/apiStats`);
-      setApiStats(result.data?.data || {});
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
-    }
-  }
+
 
   const stats = [
     {
@@ -76,6 +80,10 @@ const OverviewTab = ({ setActiveTab }) => {
     { id: 3, name: 'Jane Smith', email: 'jane@example.com', role: 'user', joined: '2026-06-05' },
     { id: 4, name: 'Mike Ross', email: 'mike@example.com', role: 'user', joined: '2026-06-04' },
   ];
+
+  if (isLoading) {
+    return <div className="p-4 text-slate-500">Loading dashboard stats...</div>; // Simple fallback
+  }
 
   return (
     <>
