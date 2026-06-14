@@ -20,14 +20,54 @@ const OverviewTab = ({ setActiveTab }) => {
   }
 
   const stats = [
-    { title: 'Total Users', value: '1,248', change: '+12%', icon: <Users size={20} className="text-teal-500" /> },
-    { title: 'Active Chat Sessions', value: '342', change: '+5%', icon: <MessageSquare size={20} className="text-blue-500" /> },
-    { title: 'API Requests Today', value: apiStats?.total_requests || 'NA', change: '+18%', icon: <Activity size={20} className="text-amber-500" /> },
-    { title: 'Min Response Time', value: apiStats?.min_response_time_ms ? `${apiStats.min_response_time_ms}ms` : 'NA', change: '-2ms', icon: <ArrowDown size={20} className="text-emerald-500" /> },
-    { title: 'Avg Response Time', value: apiStats?.avg_response_time_ms ? `${apiStats.avg_response_time_ms}ms` : 'NA', change: '-0.1s', icon: <Zap size={20} className="text-indigo-500" /> },
-    { title: 'Max Response Time', value: apiStats?.max_response_time_ms ? `${apiStats.max_response_time_ms}ms` : 'NA', change: '-0.5s', icon: <ArrowUp size={20} className="text-orange-500" /> },
-    { title: 'Token Usage Today', value: '1.2M', change: '+8%', icon: <Activity size={20} className="text-purple-500" /> },
-    { title: 'Error Rate', value: '0.04%', change: '-0.01%', icon: <AlertCircle size={20} className="text-rose-500" /> },
+    {
+      title: 'Total Users',
+      value: apiStats?.total_users ?? 'NA',
+      change: '+12%',
+      icon: <Users size={20} className="text-teal-500" />
+    },
+    {
+      title: 'Active Chat Sessions',
+      value: apiStats?.active_chat_sessions ?? 'NA',
+      change: '+5%',
+      icon: <MessageSquare size={20} className="text-blue-500" />
+    },
+    {
+      title: 'API Requests Today',
+      value: apiStats?.total_requests ?? 'NA',
+      change: '+18%',
+      icon: <Activity size={20} className="text-amber-500" />
+    },
+    {
+      title: 'Min Response Time',
+      value: apiStats?.min_response_time_ms != null ? `${apiStats.min_response_time_ms}ms` : 'NA',
+      change: '-2ms',
+      icon: <ArrowDown size={20} className="text-emerald-500" />
+    },
+    {
+      title: 'Avg Response Time',
+      value: apiStats?.avg_response_time_ms != null ? `${apiStats.avg_response_time_ms}ms` : 'NA',
+      change: '-0.1s',
+      icon: <Zap size={20} className="text-indigo-500" />
+    },
+    {
+      title: 'Max Response Time',
+      value: apiStats?.max_response_time_ms != null ? `${apiStats.max_response_time_ms}ms` : 'NA',
+      change: '-0.5s',
+      icon: <ArrowUp size={20} className="text-orange-500" />
+    },
+    {
+      title: 'Token Usage Today',
+      value: apiStats?.tokens_used_today ?? 'NA',
+      change: '+8%',
+      icon: <Activity size={20} className="text-purple-500" />
+    },
+    {
+      title: 'Error Rate',
+      value: apiStats?.error_rate_percentage != null ? `${apiStats.error_rate_percentage}%` : 'NA',
+      change: '-0.01%',
+      icon: <AlertCircle size={20} className="text-rose-500" />
+    },
   ];
 
   const recentUsers = [
