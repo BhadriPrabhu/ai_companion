@@ -32,7 +32,10 @@ export const getAPIStats = async (req, res) => {
         `;
 
         const tokensQuery = `
-            SELECT SUM(tokens_used)::int AS total_tokens 
+            SELECT SUM(tokens_used)::int AS total_tokens,
+            AVG(gemini_latency_ms)::int AS gemini_latency_time,
+            AVG(tts_latency_ms)::int AS tts_latency_time,
+            AVG(rhubarb_latency_ms)::int AS rhubarb_latency_time
             FROM messages 
             WHERE created_at >= CURRENT_DATE;
         `;
@@ -48,7 +51,10 @@ export const getAPIStats = async (req, res) => {
             ...apiRes.rows[0],
             total_users: usersRes.rows[0].total_users,
             active_chat_sessions: chatsRes.rows[0].active_sessions,
-            tokens_used_today: tokensRes.rows[0].total_tokens || 0
+            tokens_used_today: tokensRes.rows[0].total_tokens || 0,
+            gemini_latency_time: tokensRes.rows[0].gemini_latency_time || 0,
+            tts_latency_time: tokensRes.rows[0].tts_latency_time || 0,
+            rhubarb_latency_time: tokensRes.rows[0].rhubarb_latency_time || 0,
         };
 
         res.status(200).json({

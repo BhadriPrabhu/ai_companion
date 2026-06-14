@@ -92,6 +92,7 @@ export const userChat = async (req, res) => {
         }
 
         // 1. Get the Brain's response (Gemini)
+        const geminiStartTime = Date.now();
         const aiResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: [...formattedHistory, { role: 'user', parts: [{ text: message }] }],
@@ -102,14 +103,15 @@ export const userChat = async (req, res) => {
                 temperature: 0.7,
             }
         });
+        const geminiLatencyMs = Date.now() - geminiStartTime;
 
         const aiData = JSON.parse(aiResponse.text);
         console.log("Gemini decided:", aiData);
 
         const responseTimeMs = Date.now() - startTime;
         // Depending on your GenAI SDK version, tokens might be under usageMetadata or similar
-        const tokensUsed = aiResponse.usageMetadata?.totalTokenCount || 0; 
-        
+        const tokensUsed = aiResponse.usageMetadata?.totalTokenCount || 0;
+
         console.log(`Gemini decided:`, aiData);
         console.log(`Metrics -> Time: ${responseTimeMs}ms | Tokens: ${tokensUsed}`);
 
@@ -136,8 +138,10 @@ export const userChat = async (req, res) => {
 
         // 'en-US-AriaNeural' is a fantastic, highly realistic female voice.
         // Other options: 'en-US-GuyNeural' (Male), 'en-US-JennyNeural' (Female)
+        const ttsStartTime = Date.now();
         const tts = new EdgeTTS(aiData.replyText, 'en-US-AriaNeural');
         const result = await tts.synthesize();
+        const ttsLatencyMs = Date.now() - ttsStartTime;
 
         // The package returns an ArrayBuffer. We convert it to Base64 for React.
         const audioBuffer = Buffer.from(await result.audio.arrayBuffer());
@@ -153,6 +157,7 @@ export const userChat = async (req, res) => {
         const wavFile = tmp.fileSync({ postfix: '.wav' });
         const jsonFile = tmp.fileSync({ postfix: '.json' });
 
+        const rhubarbStartTime = Date.now();
         try {
             // A. Save the Base64 audio to an MP3 file
             fs.writeFileSync(mp3File.name, Buffer.from(audioBase64, 'base64'));
@@ -181,22 +186,28 @@ export const userChat = async (req, res) => {
             wavFile.removeCallback();
             jsonFile.removeCallback();
         }
+        const rhubarbLatencyMs = Date.now() - rhubarbStartTime;
 
         // Send everything back to React
         res.json(aiData);
+
+        await pool.query(
+            `UPDATE messages SET gemini_latency_ms = $1, tts_latency_ms = $2, rhubarb_latency_ms = $3 WHERE chat_id = $4`,
+            [geminiLatencyMs, ttsLatencyMs, rhubarbLatencyMs, chatId]
+        );
 
     } catch (error) {
         console.error("Server Error:", error);
 
         const failTimeMs = Date.now() - startTime;
         try {
-             await pool.query(
+            await pool.query(
                 `INSERT INTO api_metrics (endpoint, method, status_code, response_time_ms) 
                  VALUES ($1, $2, $3, $4)`,
                 ['/api/chat', 'POST', 500, failTimeMs]
             );
-        } catch(dbErr) {
-            console.error("Error:",dbErr.message);
+        } catch (dbErr) {
+            console.error("Error:", dbErr.message);
         }
 
         if (error.status === 429 || (error.message && error.message.includes('429'))) {
