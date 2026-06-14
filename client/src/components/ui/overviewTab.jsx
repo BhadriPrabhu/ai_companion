@@ -1,13 +1,31 @@
-import React from 'react';
-import { Users, MessageSquare, Activity, Settings, Zap, AlertCircle, Clock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Users, MessageSquare, Activity, Settings, Zap, AlertCircle, Clock, ArrowDown, ArrowUp } from 'lucide-react';
+import api from '../../api/api';
 
 const OverviewTab = ({ setActiveTab }) => {
-  // Enhanced Mock Data for Overview
+
+  const [apiStats, setApiStats] = useState({});
+
+  useEffect(() => {
+    fetchStats();
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      const result = await api.get(`/admin/apiStats`);
+      setApiStats(result.data?.data || {});
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    }
+  }
+
   const stats = [
     { title: 'Total Users', value: '1,248', change: '+12%', icon: <Users size={20} className="text-teal-500" /> },
     { title: 'Active Chat Sessions', value: '342', change: '+5%', icon: <MessageSquare size={20} className="text-blue-500" /> },
-    { title: 'API Requests Today', value: '8,439', change: '+18%', icon: <Activity size={20} className="text-amber-500" /> },
-    { title: 'Avg Response Time', value: '1.2s', change: '-0.1s', icon: <Zap size={20} className="text-indigo-500" /> },
+    { title: 'API Requests Today', value: apiStats?.total_requests || 'NA', change: '+18%', icon: <Activity size={20} className="text-amber-500" /> },
+    { title: 'Min Response Time', value: apiStats?.min_response_time_ms ? `${apiStats.min_response_time_ms}ms` : 'NA', change: '-2ms', icon: <ArrowDown size={20} className="text-emerald-500" /> },
+    { title: 'Avg Response Time', value: apiStats?.avg_response_time_ms ? `${apiStats.avg_response_time_ms}ms` : 'NA', change: '-0.1s', icon: <Zap size={20} className="text-indigo-500" /> },
+    { title: 'Max Response Time', value: apiStats?.max_response_time_ms ? `${apiStats.max_response_time_ms}ms` : 'NA', change: '-0.5s', icon: <ArrowUp size={20} className="text-orange-500" /> },
     { title: 'Token Usage Today', value: '1.2M', change: '+8%', icon: <Activity size={20} className="text-purple-500" /> },
     { title: 'Error Rate', value: '0.04%', change: '-0.01%', icon: <AlertCircle size={20} className="text-rose-500" /> },
   ];
@@ -89,7 +107,7 @@ const OverviewTab = ({ setActiveTab }) => {
             <Clock size={20} className="text-slate-400" /> System Health
           </h3>
           <div className="space-y-4 flex-1">
-            
+
             <div className="p-2 rounded-xl border border-emerald-100 bg-emerald-50/50">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm font-semibold text-emerald-800">Gemini API Status</span>
@@ -99,7 +117,7 @@ const OverviewTab = ({ setActiveTab }) => {
             </div>
 
             <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
-               <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-semibold text-slate-700">TTS Audio Latency</span>
                 <span className="text-sm font-bold text-slate-800">240ms</span>
               </div>
@@ -109,7 +127,7 @@ const OverviewTab = ({ setActiveTab }) => {
             </div>
 
             <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
-               <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-semibold text-slate-700">Rhubarb Processing</span>
                 <span className="text-sm font-bold text-slate-800">85ms</span>
               </div>
