@@ -23,7 +23,10 @@ messages (
     response_time_ms INTEGER,
     animation VARCHAR(50),
     facial_expression VARCHAR(50),
-    tokens_used INTEGER DEFAULT 0;
+    tokens_used INTEGER DEFAULT 0,
+    tts_latency_ms INTEGER,
+    rhubarb_latency_ms INTEGER,
+    gemini_latency_ms INTEGER
 );
 
 api_metrics (
