@@ -67,3 +67,27 @@ export const getAPIStats = async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to fetch dashboard statistics" });
     }
 }
+
+export const getAvatarStat = async (req, res) => {
+    try {
+        const interactQuery = `
+        SELECT 
+        COUNT(*)::int AS interact_count,
+        AVG(response_time_ms)::int AS response_time
+        from messages;
+        `;
+        const result = await pool.query(interactQuery);
+
+        const stats = {
+            interact_count: result.rows[0].interact_count || 0,
+            response_time: result.rows[0].response_time || 0,
+        }
+        res.status(200).json({
+            success: true,
+            data: stats
+        })
+    } catch (error) {
+        console.error("Error fetching avatar stats:",error);
+        res.status(500).json({ success: false, error: "Failed to fetch avatar statistics" });
+    }
+}
