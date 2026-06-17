@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, TrendingUp } from 'lucide-react';
+import api from '../../api/api';
 
 const AnalyticsTab = () => {
-  const analyticsData = {
-    avgResponseTime: '1.2s',
-    totalInteractions: '45,912',
+
+  const [analyticsData, setAnalyticsData] = useState({
+    avgResponseTime: 0,
+    totalInteractions: 0,
     topAnimations: [
       { name: 'Talking (Default)', usage: 85, color: 'bg-teal-500' },
       { name: 'Happy / Smiling', usage: 62, color: 'bg-blue-500' },
@@ -12,7 +14,31 @@ const AnalyticsTab = () => {
       { name: 'Laughing', usage: 28, color: 'bg-rose-500' },
       { name: 'Sad / Confused', usage: 12, color: 'bg-slate-500' },
     ]
-  };
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await api.get("/admin/avatarStats");
+        setAnalyticsData({ ...analyticsData, avgResponseTime: result.data.data.response_time, totalInteractions: result.data.data.interact_count });
+      } catch (error) {
+        console.log("Failed to load avatarStats: ", error);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // const analyticsData = {
+  //   avgResponseTime: '1.2s',
+  //   totalInteractions: '45,912',
+  //   topAnimations: [
+  //     { name: 'Talking (Default)', usage: 85, color: 'bg-teal-500' },
+  //     { name: 'Happy / Smiling', usage: 62, color: 'bg-blue-500' },
+  //     { name: 'Thinking', usage: 45, color: 'bg-amber-500' },
+  //     { name: 'Laughing', usage: 28, color: 'bg-rose-500' },
+  //     { name: 'Sad / Confused', usage: 12, color: 'bg-slate-500' },
+  //   ]
+  // };
 
   return (
     <div className="space-y-6">
@@ -24,7 +50,7 @@ const AnalyticsTab = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-600 font-medium">Avg. AI Response Time</span>
-              <span className="text-xl font-bold text-teal-600">{analyticsData.avgResponseTime}</span>
+              <span className="text-xl font-bold text-teal-600">{analyticsData.avgResponseTime}ms</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-600 font-medium">Total AI Interactions</span>
