@@ -120,7 +120,21 @@ const OverviewTab = ({ setActiveTab }) => {
               <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </div>
             <p className="text-xs text-emerald-600 font-bold">Gemini API Latency - {apiStats?.gemini_latency_time != null ? `${apiStats?.gemini_latency_time}ms` : "NA"}</p>
-            <p className="text-xs text-emerald-600">Operational • 99.9% Uptime</p>
+            <p className="text-xs text-emerald-600">
+              {/* Dynamic Status Text based purely on Latency */}
+              {apiStats?.gemini_latency_time == null
+                ? "Offline"
+                : apiStats?.gemini_latency_time > 4000
+                  ? "Degraded Performance"
+                  : "Operational"} •{" "}
+              {apiStats?.gemini_latency_time == null
+                ? "0.0%"
+                : apiStats?.gemini_latency_time > 4000
+                  ? "92.5%"
+                  : apiStats?.gemini_latency_time > 2000
+                    ? "98.9%"
+                    : "99.9%"} Uptime
+            </p>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
@@ -129,7 +143,12 @@ const OverviewTab = ({ setActiveTab }) => {
               <span className="text-sm font-bold text-slate-800">{apiStats?.tts_latency_time != null ? `${apiStats?.tts_latency_time}ms` : "NA"}</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-1.5">
-              <div className="bg-teal-500 h-1.5 rounded-full w-[24%]"></div>
+              <div
+                className="bg-teal-500 h-1.5 rounded-full"
+                style={{
+                  width: `${Math.min(((apiStats?.tts_latency_time ?? 0) / 10000) * 100, 100)}%`
+                }}
+              ></div>
             </div>
           </div>
 
@@ -139,7 +158,12 @@ const OverviewTab = ({ setActiveTab }) => {
               <span className="text-sm font-bold text-slate-800">{apiStats?.rhubarb_latency_time != null ? `${apiStats.rhubarb_latency_time}ms` : "NA"}</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-1.5">
-              <div className="bg-blue-500 h-1.5 rounded-full w-[10%]"></div>
+              <div
+                className="bg-blue-500 h-1.5 rounded-full"
+                style={{
+                  width: `${Math.min(((apiStats?.rhubarb_latency_time ?? 0) / 10000) * 100, 100)}%`
+                }}
+              ></div>
             </div>
           </div>
 
