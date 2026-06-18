@@ -20,7 +20,8 @@ const AnalyticsTab = () => {
     const fetchData = async () => {
       try {
         const result = await api.get("/admin/avatarStats");
-        setAnalyticsData({ ...analyticsData, avgResponseTime: result.data.data.response_time, totalInteractions: result.data.data.interact_count });
+        const response_time = msres(result.data.data.response_time)
+        setAnalyticsData({ ...analyticsData, avgResponseTime: response_time, totalInteractions: result.data.data.interact_count });
       } catch (error) {
         console.log("Failed to load avatarStats: ", error);
       }

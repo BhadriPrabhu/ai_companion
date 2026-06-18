@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 import api from '../../api/api';
-import { formatDate } from '../../utils/dateFormatter';
 
 const UsersTab = () => {
 
