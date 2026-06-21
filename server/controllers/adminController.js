@@ -91,3 +91,32 @@ export const getAvatarStat = async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to fetch avatar statistics" });
     }
 }
+
+export const getChatLog = async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                c.id AS chat_id,
+                u.name AS user_name,
+                COUNT(m.id)::int AS message_count, -- Cast to int for cleaner JSON output
+                c.updated_at,
+                COALESCE(c.sentiment, 'Neutral') AS sentiment -- Ensures a value is always returned
+            FROM chats c
+            JOIN users u ON c.user_id = u.id
+            LEFT JOIN messages m ON c.id = m.chat_id
+            GROUP BY c.id, u.name, c.sentiment -- Added c.sentiment to GROUP BY
+            ORDER BY c.updated_at DESC
+            LIMIT 10;
+        `;
+
+        const result = await pool.query(query);
+
+        res.status(200).json({
+            success: true,
+            data: result.rows
+        })
+    } catch (error) {
+        console.error("Error fetching chat log:",error);
+        res.status(500).json({ success: false, error: "Failed to fetch the chat log" });
+    }
+}
