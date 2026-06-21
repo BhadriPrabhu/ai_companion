@@ -1,12 +1,25 @@
 import React from 'react';
 import { MessageSquare, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import api from '../../api/api';
+import { formatDate } from '../../utils/dateFormatter';
 
 const ChatLogsTab = () => {
-  const chatLogs = [
-    { id: 'chat-101', user: 'Guest', messages: 14, time: '2 mins ago', sentiment: 'Positive' },
-    { id: 'chat-102', user: 'John Doe', messages: 8, time: '15 mins ago', sentiment: 'Neutral' },
-    { id: 'chat-103', user: 'Jane Smith', messages: 32, time: '1 hour ago', sentiment: 'Positive' },
-  ];
+  const [chatLogs, setChatLogs] = useState([
+    // { id: 'chat-101', user: 'Guest', messages: 14, time: '2 mins ago', sentiment: 'Positive' },
+    // { id: 'chat-102', user: 'John Doe', messages: 8, time: '15 mins ago', sentiment: 'Neutral' },
+    // { id: 'chat-103', user: 'Jane Smith', messages: 32, time: '1 hour ago', sentiment: 'Positive' },
+  ]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await api("/admin/chatLog");
+      const data = result?.data?.data;
+      setChatLogs(data);
+    }
+    fetchData();
+  },[]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -21,8 +34,8 @@ const ChatLogsTab = () => {
                 <MessageSquare size={20} />
               </div>
               <div>
-                <p className="font-semibold text-slate-800">{log.user}</p>
-                <p className="text-sm text-slate-500">{log.messages} messages • {log.time}</p>
+                <p className="font-semibold text-slate-800">{log.user_name ?? "User"}</p>
+                <p className="text-sm text-slate-500">{log.message_count} messages • {formatDate(log.updated_at)}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
