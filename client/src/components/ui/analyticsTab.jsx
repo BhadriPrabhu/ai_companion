@@ -8,11 +8,11 @@ const AnalyticsTab = () => {
     avgResponseTime: 0,
     totalInteractions: 0,
     topAnimations: [
-      { name: 'Talking (Default)', usage: 85, color: 'bg-teal-500' },
-      { name: 'Happy / Smiling', usage: 62, color: 'bg-blue-500' },
-      { name: 'Thinking', usage: 45, color: 'bg-amber-500' },
-      { name: 'Laughing', usage: 28, color: 'bg-rose-500' },
-      { name: 'Sad / Confused', usage: 12, color: 'bg-slate-500' },
+      // { name: 'Talking (Default)', usage: 85, color: 'bg-teal-500' },
+      // { name: 'Happy / Smiling', usage: 62, color: 'bg-blue-500' },
+      // { name: 'Thinking', usage: 45, color: 'bg-amber-500' },
+      // { name: 'Laughing', usage: 28, color: 'bg-rose-500' },
+      // { name: 'Sad / Confused', usage: 12, color: 'bg-slate-500' },
     ]
   })
 
@@ -20,8 +20,8 @@ const AnalyticsTab = () => {
     const fetchData = async () => {
       try {
         const result = await api.get("/admin/avatarStats");
-        const response_time = msres(result.data.data.response_time)
-        setAnalyticsData({ ...analyticsData, avgResponseTime: response_time, totalInteractions: result.data.data.interact_count });
+        const response_time = result.data.data.response_time;
+        setAnalyticsData({ ...analyticsData, avgResponseTime: response_time, totalInteractions: result.data.data.interact_count, topAnimations: result.data.data.top_animations });
       } catch (error) {
         console.log("Failed to load avatarStats: ", error);
       }
@@ -68,11 +68,11 @@ const AnalyticsTab = () => {
             {analyticsData.topAnimations.map((anim, idx) => (
               <div key={idx}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium text-slate-700">{anim.name}</span>
-                  <span className="text-slate-500">{anim.usage}%</span>
+                  <span className="font-medium text-slate-700">{anim.animation}</span>
+                  <span className="text-slate-500">{anim.percentage}%</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2.5">
-                  <div className={`${anim.color} h-2 rounded-full`} style={{ width: `${anim.usage}%` }}></div>
+                  <div className={`bg-blue-500 h-2 rounded-full`} style={{ width: `${anim.percentage}%` }}></div>
                 </div>
               </div>
             ))}
