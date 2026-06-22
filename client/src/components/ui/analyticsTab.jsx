@@ -51,11 +51,11 @@ const AnalyticsTab = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-600 font-medium">Avg. AI Response Time</span>
-              <span className="text-xl font-bold text-teal-600">{analyticsData.avgResponseTime}ms</span>
+              <span className="text-lg font-semibold text-teal-600">{analyticsData.avgResponseTime}ms</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-600 font-medium">Total AI Interactions</span>
-              <span className="text-xl font-bold text-blue-600">{analyticsData.totalInteractions}</span>
+              <span className="text-lg font-semibold text-blue-600">{analyticsData.totalInteractions}</span>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ const AnalyticsTab = () => {
                   <span className="text-slate-500">{anim.percentage}%</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2.5">
-                  <div className={`bg-blue-500 h-2 rounded-full`} style={{ width: `${anim.percentage}%` }}></div>
+                  <div className={`${anim.percentage > 90 ? "bg-red-700" : anim.percentage > 80 ? "bg-red-500" : anim.percentage > 70 ? "bg-orange-500" : "bg-blue-500"} h-2 rounded-full`} style={{ width: `${anim.percentage}%` }}></div>
                 </div>
               </div>
             ))}
