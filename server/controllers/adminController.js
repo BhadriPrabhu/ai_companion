@@ -76,11 +76,27 @@ export const getAvatarStat = async (req, res) => {
         AVG(response_time_ms)::int AS response_time
         from messages;
         `;
-        const result = await pool.query(interactQuery);
+        const animationQuery = `
+            SELECT
+                animation, 
+                COUNT(*)::int AS count,
+                ROUND(
+                    (COUNT(*)::numeric / (SELECT COUNT(*) FROM messages WHERE animation IS NOT NULL)) * 100, 
+                    0
+                )::int AS percentage
+            FROM messages
+            WHERE animation IS NOT NULL
+            GROUP BY animation
+            ORDER BY count DESC;
+        `;
+
+        const animationResult = await pool.query(animationQuery);
+        const interactResult = await pool.query(interactQuery);
 
         const stats = {
-            interact_count: result.rows[0].interact_count || 0,
-            response_time: result.rows[0].response_time || 0,
+            interact_count: interactResult.rows[0].interact_count || 0,
+            response_time: interactResult.rows[0].response_time || 0,
+            top_animations: animationResult.rows || []
         }
         res.status(200).json({
             success: true,
