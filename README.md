@@ -30,8 +30,8 @@ The project is structured to separate the complex 3D rendering pipeline from sta
 
 ## Repository Structure
 
-- `client/` — React app (Vite) containing UI, assets, and components
-- `server/` — Node server and related resources
+- `client/` - React app (Vite) containing UI, assets, and components
+- `server/` - Node server and related resources
 
 ## Prerequisites
 
